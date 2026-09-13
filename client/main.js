@@ -58,6 +58,21 @@ document.addEventListener('DOMContentLoaded', () => {
      WebSocket Event Handlers
      ========================================================================== */
 
+  // Connection Drop & Recovery Toast Notifications
+  let wasDisconnected = false;
+
+  ws.on('disconnect', () => {
+    wasDisconnected = true;
+    showToast('⚠️ Connection lost. Reconnecting to canvas server...', 'warning');
+  });
+
+  ws.on('connect', () => {
+    if (wasDisconnected) {
+      wasDisconnected = false;
+      showToast('✅ Connection restored! Synchronizing canvas state...', 'success');
+    }
+  });
+
   ws.on('room:joined', (data) => {
     localUser = data.user;
     engine.operations = data.snapshot.operations || [];

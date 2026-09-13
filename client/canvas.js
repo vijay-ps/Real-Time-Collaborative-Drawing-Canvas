@@ -394,16 +394,27 @@ class CanvasEngine {
   }
 
   /**
-   * Update remote cursor position directly
+   * Update remote cursor position with target coordinates for Lerp interpolation
    */
   updateRemoteCursor(userId, cursorData) {
-    this.remoteCursors.set(userId, {
-      x: cursorData.x,
-      y: cursorData.y,
-      userName: cursorData.userName,
-      userColor: cursorData.userColor,
-      isDrawing: cursorData.isDrawing
-    });
+    const existing = this.remoteCursors.get(userId);
+    if (!existing) {
+      this.remoteCursors.set(userId, {
+        x: cursorData.x,
+        y: cursorData.y,
+        targetX: cursorData.x,
+        targetY: cursorData.y,
+        userName: cursorData.userName,
+        userColor: cursorData.userColor,
+        isDrawing: cursorData.isDrawing
+      });
+    } else {
+      existing.targetX = cursorData.x;
+      existing.targetY = cursorData.y;
+      existing.userName = cursorData.userName;
+      existing.userColor = cursorData.userColor;
+      existing.isDrawing = cursorData.isDrawing;
+    }
   }
 
   /**
@@ -647,7 +658,7 @@ class CanvasEngine {
   }
 
   /**
-   * Render Remote User Cursors directly without lerp
+   * Render Remote User Cursors with smooth frame-by-frame Linear Interpolation (Lerp)
    */
   renderCursors() {
     this.curCtx.save();
@@ -660,9 +671,16 @@ class CanvasEngine {
     this.curCtx.scale(this.zoomLevel, this.zoomLevel);
 
     for (const [userId, cursor] of this.remoteCursors.entries()) {
-      const { x, y, userName, userColor, isDrawing } = cursor;
-      if (typeof x !== 'number' || typeof y !== 'number') continue;
+      if (typeof cursor.targetX !== 'number' || typeof cursor.targetY !== 'number') continue;
 
+      if (typeof cursor.x !== 'number') cursor.x = cursor.targetX;
+      if (typeof cursor.y !== 'number') cursor.y = cursor.targetY;
+
+      // Remote Cursor Linear Interpolation (Lerp): 0.35 smoothing factor
+      cursor.x += (cursor.targetX - cursor.x) * 0.35;
+      cursor.y += (cursor.targetY - cursor.y) * 0.35;
+
+      const { x, y, userName, userColor, isDrawing } = cursor;
       this.curCtx.save();
 
       // Pointer circle

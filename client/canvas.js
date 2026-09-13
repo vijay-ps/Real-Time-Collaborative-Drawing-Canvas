@@ -2,7 +2,7 @@
  * Canvas Engine - Pure HTML5 Canvas API Implementation
  * Multi-layer rendering, midpoint bezier path smoothing, shape rendering,
  * vector history sequence replay, remote cursor linear interpolation (lerp),
- * viewport panning, and high-frequency point batching.
+ * viewport panning, seamless zero-flicker layer transfer, and high-frequency point batching.
  */
 
 class CanvasEngine {
@@ -43,6 +43,7 @@ class CanvasEngine {
     this.isDrawing = false;
     this.currentPoints = [];
     this.pendingPointBatch = []; // Batching queue for ~20ms network flush
+    this.pendingLocalStroke = null; // Zero-flicker bridge stroke until server commit
     this.startPoint = null;
     this.activeStreamId = null;
 
@@ -140,6 +141,7 @@ class CanvasEngine {
     this.startPoint = pt;
     this.currentPoints = [pt];
     this.pendingPointBatch = [];
+    this.pendingLocalStroke = null;
     this.activeStreamId = `stream_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
     // Text tool handles click via prompt dialog
@@ -222,10 +224,21 @@ class CanvasEngine {
       tool: this.currentTool,
       color: this.currentColor,
       size: this.strokeWidth,
-      points: this.currentPoints,
+      points: [...this.currentPoints],
       startPoint: this.startPoint,
       endPoint: pt,
       timestamp: Date.now()
+    };
+
+    // Hold pending local preview stroke for seamless zero-flicker transfer until server op:committed arrives
+    this.pendingLocalStroke = {
+      streamId: this.activeStreamId,
+      points: [...this.currentPoints],
+      tool: this.currentTool,
+      color: this.currentColor,
+      size: this.strokeWidth,
+      startPoint: this.startPoint,
+      endPoint: pt
     };
 
     if (window.canvasWS && window.canvasWS.isConnected && this.activeStreamId) {
@@ -236,16 +249,16 @@ class CanvasEngine {
       });
     } else {
       // Offline fallback
+      this.pendingLocalStroke = null;
       this.operations.push(op);
       this.redrawAll();
     }
 
-    // Reset local preview state
+    // Reset local drawing points
     this.currentPoints = [];
     this.pendingPointBatch = [];
     this.startPoint = null;
     this.activeStreamId = null;
-    this.clearPreviewCtx();
   }
 
   /**
@@ -487,6 +500,14 @@ class CanvasEngine {
       } else if (this.startPoint && this.currentPoints.length > 0) {
         const currentPt = this.currentPoints[this.currentPoints.length - 1];
         this.drawShape(this.prevCtx, this.currentTool, this.startPoint, currentPt, this.currentColor, this.strokeWidth);
+      }
+    } else if (this.pendingLocalStroke) {
+      // Zero-flicker bridge: keep rendering local stroke until server op:committed arrives
+      const stroke = this.pendingLocalStroke;
+      if (stroke.tool === 'brush' || stroke.tool === 'eraser') {
+        this.drawSmoothPath(this.prevCtx, stroke.points, stroke.color, stroke.size, stroke.tool === 'eraser');
+      } else if (stroke.startPoint && stroke.endPoint) {
+        this.drawShape(this.prevCtx, stroke.tool, stroke.startPoint, stroke.endPoint, stroke.color, stroke.size);
       }
     }
 

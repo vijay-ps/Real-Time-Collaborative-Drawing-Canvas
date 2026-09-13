@@ -118,6 +118,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Zero-flicker bridge: clear local pending stroke right as offscreen layer receives operation
+    if (engine.pendingLocalStroke) {
+      engine.pendingLocalStroke = null;
+    }
+
     engine.operations.push(data.operation);
     engine.redrawAll();
     engine.renderPreview();

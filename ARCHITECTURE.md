@@ -4,8 +4,9 @@ This document details the architectural decisions, distributed state synchroniza
 
 ---
 
-## 🌐 Live Production Demo
+## 🌐 Live Production Demo & Video Walkthrough
 - **Deployed Application**: [https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/](https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/)
+- **Video Demo Folder (Google Drive)**: [https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing](https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing)
 - **Target Platform**: Node.js Container (Heroku / Render / Railway)
 
 ---

@@ -4,9 +4,11 @@ A high-performance, multi-user real-time drawing application built with **Vanill
 
 ---
 
-## 🌐 Live Production Demo
+## 🌐 Live Production Demo & Video Walkthrough
 
 ### 🚀 **Live Demo URL**: [https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/](https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/)
+
+### 🎥 **Video Demo Folder (Google Drive)**: [https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing](https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing)
 
 > **Testing Multi-User Real-Time Sync**: Open the live demo link in two separate browser windows (or an Incognito tab / mobile device) to see real-time stroke streaming, live remote cursors, and global vector undo/redo in action!
 
@@ -122,5 +124,5 @@ Run through these 8 test scenarios to verify application correctness:
 - **WebSocket Protocol & Real-time State Sync**: ~3 hours
 - **Global Undo/Redo & Monotonic Sequence Solver**: ~2.5 hours
 - **UI Design, Light Theme Styling & UX**: ~2 hours
-- **Testing, Documentation & Heroku Deployment**: ~2 hours
+- **Testing, Documentation & Deployment**: ~2 hours
 - **Total Time Spent**: ~15.5 hours

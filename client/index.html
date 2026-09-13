@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Real-Time Collaborative Canvas</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- App Container -->
+  <div id="app">
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-icon">🎨</div>
+        <div class="brand-text">
+          <h1>CanvasCraft <span class="badge-live">LIVE</span></h1>
+          <p class="tagline">Real-time collaborative vector canvas</p>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="room-pill" id="room-info-btn" title="Click to change room">
+          <span class="room-icon">🌐</span>
+          <span class="room-label">Room:</span>
+          <span class="room-name" id="current-room-display">default</span>
+          <span class="room-switch-hint">⚙️</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Telemetry HUD -->
+        <div class="telemetry-bar">
+          <div class="metric" id="fps-metric" title="Frames Per Second">
+            <span class="metric-label">FPS</span>
+            <span class="metric-val" id="fps-val">60</span>
+          </div>
+          <div class="metric" id="ping-metric" title="Round Trip Latency">
+            <span class="metric-label">PING</span>
+            <span class="metric-val" id="ping-val">-- ms</span>
+          </div>
+        </div>
+
+        <!-- Online Users Container -->
+        <div class="users-container" id="users-list-container">
+          <div class="users-counter" id="users-count-badge">👥 1 Online</div>
+          <div class="users-avatars" id="users-avatars-list">
+            <!-- Avatars injected dynamically -->
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="canvas-workspace" id="canvas-container">
+      <!-- Layered Canvas System -->
+      <canvas id="offscreen-canvas" class="canvas-layer"></canvas>
+      <canvas id="preview-canvas" class="canvas-layer"></canvas>
+      <canvas id="cursor-canvas" class="canvas-layer"></canvas>
+
+      <!-- Floating Glassmorphism Toolbar -->
+      <nav class="floating-toolbar">
+        <!-- Drawing Tools -->
+        <div class="toolbar-section tools-group">
+          <button class="tool-btn active" data-tool="brush" title="Brush (B)">
+            <span class="tool-icon">🖌️</span>
+            <span class="tool-tooltip">Brush</span>
+          </button>
+          <button class="tool-btn" data-tool="eraser" title="Eraser (E)">
+            <span class="tool-icon">🧹</span>
+            <span class="tool-tooltip">Eraser</span>
+          </button>
+          <button class="tool-btn" data-tool="line" title="Line (L)">
+            <span class="tool-icon">📏</span>
+            <span class="tool-tooltip">Line</span>
+          </button>
+          <button class="tool-btn" data-tool="rectangle" title="Rectangle (R)">
+            <span class="tool-icon">🔲</span>
+            <span class="tool-tooltip">Rectangle</span>
+          </button>
+          <button class="tool-btn" data-tool="circle" title="Circle (C)">
+            <span class="tool-icon">⭕</span>
+            <span class="tool-tooltip">Circle</span>
+          </button>
+          <button class="tool-btn" data-tool="text" title="Text (T)">
+            <span class="tool-icon">🔤</span>
+            <span class="tool-tooltip">Text</span>
+          </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Stroke Width Control -->
+        <div class="toolbar-section size-group">
+          <div class="size-preview-wrapper" title="Stroke Width Preview">
+            <div class="size-preview-dot" id="stroke-preview-dot"></div>
+          </div>
+          <input type="range" id="stroke-width-slider" min="1" max="50" value="5" class="slider">
+          <span class="size-label" id="stroke-width-val">5px</span>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Color Palette -->
+        <div class="toolbar-section color-group">
+          <div class="color-picker-wrapper">
+            <input type="color" id="native-color-picker" value="#3B82F6" title="Custom Color Picker">
+          </div>
+          <div class="palette-swatches">
+            <button class="swatch active" data-color="#3B82F6" style="background-color: #3B82F6;"></button>
+            <button class="swatch" data-color="#EF4444" style="background-color: #EF4444;"></button>
+            <button class="swatch" data-color="#10B981" style="background-color: #10B981;"></button>
+            <button class="swatch" data-color="#F59E0B" style="background-color: #F59E0B;"></button>
+            <button class="swatch" data-color="#8B5CF6" style="background-color: #8B5CF6;"></button>
+            <button class="swatch" data-color="#EC4899" style="background-color: #EC4899;"></button>
+            <button class="swatch" data-color="#1E293B" style="background-color: #1E293B;"></button>
+            <button class="swatch" data-color="#FFFFFF" style="background-color: #FFFFFF;"></button>
+          </div>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- History Actions -->
+        <div class="toolbar-section action-group">
+          <button class="action-btn" id="btn-undo" title="Global Undo (Ctrl+Z)">
+            <span class="action-icon">↩️</span>
+            <span class="action-text">Undo</span>
+          </button>
+          <button class="action-btn" id="btn-redo" title="Global Redo (Ctrl+Y)">
+            <span class="action-icon">↪️</span>
+            <span class="action-text">Redo</span>
+          </button>
+          <button class="action-btn danger" id="btn-clear" title="Clear Canvas">
+            <span class="action-icon">🗑️</span>
+            <span class="action-text">Clear</span>
+          </button>
+          <button class="action-btn success" id="btn-save" title="Export Image">
+            <span class="action-icon">💾</span>
+            <span class="action-text">Export</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Notification Toast -->
+      <div id="toast-container" class="toast-container"></div>
+    </main>
+
+    <!-- Room & Profile Modal -->
+    <div class="modal-backdrop" id="room-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Join Studio Room</h2>
+          <button class="modal-close" id="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="input-user-name">Your Display Name</label>
+            <input type="text" id="input-user-name" placeholder="Enter your nickname" maxlength="20">
+          </div>
+          <div class="form-group">
+            <label for="input-room-id">Room Name / ID</label>
+            <input type="text" id="input-room-id" placeholder="e.g. design-sprint, room-1" value="default" maxlength="30">
+          </div>
+          <div class="room-quick-links">
+            <span>Quick Join:</span>
+            <button class="btn-chip" data-room="default">default</button>
+            <button class="btn-chip" data-room="art-studio">art-studio</button>
+            <button class="btn-chip" data-room="playground">playground</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" id="btn-join-room">Enter Room 🚀</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="websocket.js"></script>
+  <script src="canvas.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

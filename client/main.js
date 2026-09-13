@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
       avatar.textContent = u.userName ? u.userName.charAt(0).toUpperCase() : 'U';
 
       if (u.userId === localUser?.userId) {
-        avatar.style.boxShadow = `0 0 0 2px #0F172A`;
+        avatar.style.boxShadow = `0 0 0 2px #FFF`;
       }
 
       usersAvatarsList.appendChild(avatar);
@@ -182,8 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      engine.currentTool = btn.dataset.tool;
-      showToast(`Tool: ${btn.dataset.tool.toUpperCase()}`, 'info');
+      const tool = btn.dataset.tool;
+      engine.setTool(tool);
+      showToast(`Tool: ${tool.toUpperCase()}`, 'info');
     });
   });
 
@@ -319,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const key = e.key.toLowerCase();
-    const tools = { b: 'brush', e: 'eraser', l: 'line', r: 'rectangle', c: 'circle', t: 'text' };
+    const tools = { v: 'select', h: 'select', b: 'brush', e: 'eraser', l: 'line', r: 'rectangle', c: 'circle', t: 'text' };
     if (tools[key]) {
       const btn = document.querySelector(`.tool-btn[data-tool="${tools[key]}"]`);
       if (btn) btn.click();

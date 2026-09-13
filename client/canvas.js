@@ -2,7 +2,7 @@
  * Canvas Engine - Pure HTML5 Canvas API Implementation
  * Multi-layer rendering, midpoint bezier path smoothing, shape rendering,
  * vector history sequence replay, remote cursor linear interpolation (lerp),
- * and high-frequency point batching.
+ * viewport panning, and high-frequency point batching.
  */
 
 class CanvasEngine {
@@ -23,8 +23,14 @@ class CanvasEngine {
     this.height = 0;
     this.dpr = window.devicePixelRatio || 1;
 
+    // Viewport Panning Offset (Pan / Cursor Tool)
+    this.panX = 0;
+    this.panY = 0;
+    this.isPanning = false;
+    this.lastPanScreenPoint = null;
+
     // Active Tool & Style State
-    this.currentTool = 'brush'; // brush, eraser, line, rectangle, circle, text
+    this.currentTool = 'brush'; // select (pan), brush, eraser, line, rectangle, circle, text
     this.currentColor = '#2563EB';
     this.strokeWidth = 5;
 
@@ -97,14 +103,32 @@ class CanvasEngine {
 
   getPointerCoords(e) {
     const rect = this.previewCanvas.getBoundingClientRect();
+    // Return World space coordinates factoring in viewport pan offset
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: (e.clientX - rect.left) - this.panX,
+      y: (e.clientY - rect.top) - this.panY
     };
+  }
+
+  setTool(tool) {
+    this.currentTool = tool;
+    if (tool === 'select') {
+      this.container.style.cursor = 'grab';
+    } else {
+      this.container.style.cursor = 'crosshair';
+    }
   }
 
   onPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return; // Left click only
+
+    if (this.currentTool === 'select') {
+      this.isPanning = true;
+      this.lastPanScreenPoint = { x: e.clientX, y: e.clientY };
+      this.container.style.cursor = 'grabbing';
+      return;
+    }
+
     this.isDrawing = true;
     const pt = this.getPointerCoords(e);
 
@@ -137,9 +161,20 @@ class CanvasEngine {
   }
 
   onPointerMove(e) {
+    if (this.isPanning) {
+      const dx = e.clientX - this.lastPanScreenPoint.x;
+      const dy = e.clientY - this.lastPanScreenPoint.y;
+      this.panX += dx;
+      this.panY += dy;
+      this.lastPanScreenPoint = { x: e.clientX, y: e.clientY };
+      this.redrawAll();
+      this.renderPreview();
+      return;
+    }
+
     const pt = this.getPointerCoords(e);
 
-    // Broadcast cursor position
+    // Broadcast cursor position in world space
     if (window.canvasWS && window.canvasWS.isConnected) {
       window.canvasWS.send({
         type: 'cursor:move',
@@ -158,6 +193,12 @@ class CanvasEngine {
   }
 
   onPointerUp(e) {
+    if (this.isPanning) {
+      this.isPanning = false;
+      this.container.style.cursor = 'grab';
+      return;
+    }
+
     if (!this.isDrawing) return;
     this.isDrawing = false;
 
@@ -384,11 +425,17 @@ class CanvasEngine {
      ========================================================================== */
 
   clearPreviewCtx() {
-    this.prevCtx.clearRect(0, 0, this.width, this.height);
+    this.prevCtx.save();
+    this.prevCtx.setTransform(1, 0, 0, 1, 0, 0);
+    this.prevCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
+    this.prevCtx.restore();
   }
 
   clearOffscreenCtx() {
-    this.offCtx.clearRect(0, 0, this.width, this.height);
+    this.offCtx.save();
+    this.offCtx.setTransform(1, 0, 0, 1, 0, 0);
+    this.offCtx.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
+    this.offCtx.restore();
   }
 
   /**
@@ -396,6 +443,9 @@ class CanvasEngine {
    */
   redrawAll() {
     this.clearOffscreenCtx();
+
+    this.offCtx.save();
+    this.offCtx.translate(this.panX, this.panY);
 
     const activeOps = this.operations
       .filter(op => !op.undone)
@@ -412,6 +462,8 @@ class CanvasEngine {
         this.drawShape(this.offCtx, op.tool, op.startPoint, op.endPoint, op.color, op.size, false);
       }
     }
+
+    this.offCtx.restore();
   }
 
   /**
@@ -419,6 +471,9 @@ class CanvasEngine {
    */
   renderPreview() {
     this.clearPreviewCtx();
+
+    this.prevCtx.save();
+    this.prevCtx.translate(this.panX, this.panY);
 
     // 1. Draw local in-progress stroke/shape
     if (this.isDrawing) {
@@ -439,13 +494,21 @@ class CanvasEngine {
         this.drawShape(this.prevCtx, stream.tool, stream.startPoint, lastPt, stream.color, stream.size);
       }
     }
+
+    this.prevCtx.restore();
   }
 
   /**
-   * Render Remote User Cursors with Linear Interpolation (Lerp) for silky smooth movement
+   * Render Remote User Cursors with Linear Interpolation (Lerp)
    */
   renderCursors() {
-    this.curCtx.clearRect(0, 0, this.width, this.height);
+    this.curCtx.save();
+    this.curCtx.setTransform(1, 0, 0, 1, 0, 0);
+    this.curCtx.clearRect(0, 0, this.cursorCanvas.width, this.cursorCanvas.height);
+    this.curCtx.restore();
+
+    this.curCtx.save();
+    this.curCtx.translate(this.panX, this.panY);
 
     for (const [userId, cursor] of this.remoteCursors.entries()) {
       // Linear interpolation (lerp) towards target coords
@@ -496,6 +559,8 @@ class CanvasEngine {
 
       this.curCtx.restore();
     }
+
+    this.curCtx.restore();
   }
 
   /* ==========================================================================

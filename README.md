@@ -8,7 +8,7 @@ A multi-user real-time drawing application built with **Vanilla JavaScript (HTML
 
 - **🚀 Live Demo URL**: [https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/](https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/)
 - **📁 GitHub Repository**: [https://github.com/vijay-ps/Real-Time-Collaborative-Drawing-Canvas](https://github.com/vijay-ps/Real-Time-Collaborative-Drawing-Canvas)
-- **🎥 Video Demo Folder (Google Drive)**: [https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing](https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing)
+
 
 ---
 

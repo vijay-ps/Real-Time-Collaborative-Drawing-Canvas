@@ -1,6 +1,6 @@
 # 🎨 Real-Time Collaborative Drawing Canvas
 
-A high-performance, multi-user real-time drawing application built with **Vanilla JavaScript (HTML5 Canvas API)**, **Node.js**, **Express**, and native **WebSockets (`ws`)**. Multiple users can draw simultaneously on a shared vector canvas with live path streaming, smooth curves, remote user cursors, room isolation, and a global vector undo/redo history.
+A multi-user real-time drawing application built with **Vanilla JavaScript (HTML5 Canvas API)**, **Node.js**, **Express**, and native **WebSockets (`ws`)**.
 
 ---
 
@@ -10,24 +10,21 @@ A high-performance, multi-user real-time drawing application built with **Vanill
 - **📁 GitHub Repository**: [https://github.com/vijay-ps/Real-Time-Collaborative-Drawing-Canvas](https://github.com/vijay-ps/Real-Time-Collaborative-Drawing-Canvas)
 - **🎥 Video Demo Folder (Google Drive)**: [https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing](https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing)
 
-> **Testing Multi-User Real-Time Sync**: Open the live demo link in two separate browser windows (or an Incognito tab / mobile device) to see real-time stroke streaming, live remote cursors, and global vector undo/redo in action!
-
 ---
 
-## ✨ Implemented Features
+## ✨ Features
 
-- **Pure Canvas Operations**: Zero drawing libraries (no Fabric.js or Konva). Built with raw HTML5 Canvas 2D Context API and Midpoint Quadratic Bezier path smoothing.
-- **Real-Time Stream Sync**: Streams live brush strokes as users draw (`stroke:start`, `stroke:point`, `stroke:end`) rather than waiting for stroke completion.
-- **Remote User Cursors**: Shows live mouse/touch pointer positions with linear interpolation (Lerp) for smooth movement, custom user colors, and name tags (`User 1`, `User 2`).
-- **Global Vector Undo/Redo**: Maintains a server-authoritative vector operation log. Undoing/redoing re-evaluates state deterministically across all connected clients.
-- **User-Specific Content Clear**: The Clear button erases only the local user's own drawings from the canvas, leaving other participants' drawings intact.
-- **Drawing & Shape Tools**: Brush (`B`), Eraser (`E`), Line (`L`), Rectangle (`R`), Circle (`C`), Text (`T`), and Pan/Cursor tool (`select` / `V`).
-- **Stroke & Color Controls**: Dynamic stroke width slider (1px–50px) with live dot preview + palette swatches + native HTML5 color picker.
-- **Room System**: Multi-room support via URL query parameters (`?room=art-studio`) or live in-app room switcher modal.
-- **Telemetry HUD**: Real-time FPS counter (canvas `requestAnimationFrame` loop) and WebSocket RTT latency display (ping/pong).
-- **PNG Image Export**: Export high-resolution PNG drawings directly to your device.
-- **Keyboard Shortcuts**: Built-in computer hotkeys for tools (`V`/`H`, `B`, `E`, `L`, `R`, `C`, `T`) and Undo/Redo (`Ctrl+Z`, `Ctrl+Y`, `Ctrl+Shift+Z`).
-- **Responsive & Mobile Touch**: Full 2-finger touch pinch-to-zoom, 2-finger pan, and 1-finger touch drawing support on mobile devices and tablets.
+- **Pure Canvas Operations**: Built with raw HTML5 Canvas 2D API (no Fabric.js or Konva) and Midpoint Bezier curve path smoothing.
+- **Real-Time Sync**: Live stroke streaming as users draw (`stroke:start`, `stroke:point`, `stroke:end`).
+- **Remote User Cursors**: Real-time remote cursor tracking with linear interpolation (Lerp) and user name badges (`User 1`, `User 2`).
+- **Global Vector Undo/Redo**: Server-authoritative vector operation log maintaining canvas consistency across all users.
+- **User-Specific Clear**: Clear button erases only the requesting user's drawings, leaving other participants' work intact.
+- **Drawing Tools**: Brush (`B`), Eraser (`E`), Line (`L`), Rectangle (`R`), Circle (`C`), Text (`T`), and Pan/Cursor (`V`).
+- **Stroke & Color Controls**: 1px–50px stroke width slider + palette swatches + native color picker.
+- **Room System**: Multi-room isolation via URL query params (`?room=art-studio`) or room switcher modal.
+- **Telemetry HUD**: Real-time FPS counter and WebSocket latency display (PING).
+- **PNG Image Export**: Download high-resolution PNG snapshots of the canvas.
+- **Responsive & Mobile Touch**: 2-finger touch pinch-to-zoom, 2-finger pan, and 1-finger touch drawing on mobile devices.
 
 ---
 
@@ -36,19 +33,17 @@ A high-performance, multi-user real-time drawing application built with **Vanill
 ```
 collaborative-canvas/
 ├── client/
-│   ├── index.html        # Main DOM layout, header, floating toolbar & modals
-│   ├── style.css         # Modern Light Theme CSS & responsive breakpoints
-│   ├── canvas.js         # Pure Canvas API engine, layer buffer, path smoothing & lerp
-│   ├── websocket.js      # WebSocket client with ping/pong latency & auto-reconnect
-│   └── main.js           # App controller, toolbar bindings & shortcut listeners
+│   ├── index.html        # DOM layout & toolbar
+│   ├── style.css         # Light theme styles
+│   ├── canvas.js         # HTML5 Canvas 2D engine & layer buffer
+│   ├── websocket.js      # WebSocket client with ping/pong latency
+│   └── main.js           # App initialization & UI handlers
 ├── server/
-│   ├── server.js         # Express HTTP + Native WebSocket server initialization
-│   ├── rooms.js          # Room lifecycle, user identities & broadcast manager
-│   └── drawing-state.js  # Vector history log & global undo/redo state solver
-├── package.json          # Node.js dependencies (express, ws) and start script
-├── Procfile              # Heroku deployment entrypoint
-├── README.md             # Project overview, setup, and multi-user testing guide
-└── ARCHITECTURE.md       # Detailed technical architecture, protocol & data flow
+│   ├── server.js         # Express & WebSocket server
+│   ├── rooms.js          # Room management & client identities
+│   └── drawing-state.js  # Vector history log & global undo/redo solver
+├── package.json          # Node.js dependencies
+└── ARCHITECTURE.md       # Technical architecture & protocol details
 ```
 
 ---
@@ -57,40 +52,28 @@ collaborative-canvas/
 
 ### 1. Installation
 
-Ensure you have **Node.js (v18+)** installed.
-
 ```bash
-# Install dependencies
 npm install
 ```
 
 ### 2. Run Application
 
 ```bash
-# Start server
 npm start
 ```
 
-The application will be running at: **`http://localhost:3000`**
+Open **`http://localhost:3000`** in your browser.
 
 ---
 
-## 🧪 Multi-User Verification Checklist
+## 🧪 Multi-User Testing Guide
 
-Run through these 8 test scenarios to verify application correctness:
-
-1. **Basic Drawing Test**: Draw a stroke in Browser A. Verify it appears smoothly on your screen immediately (Client Prediction).
-2. **Live Remote Sync Test**: Open Browser B side-by-side with Browser A. Draw in Browser A and observe the stroke streaming in real-time in Browser B *while* drawing.
-3. **Simultaneous Overlapping Strokes**: Draw overlapping strokes simultaneously in Browser A and B. Both browsers converge to the exact same visual state (Server Sequence Resolution).
-4. **Remote Cursor Tracking Test**: Move mouse in Browser A. Browser B displays User A's avatar tag and cursor ring moving smoothly in real-time (Linear Interpolation).
-5. **User Presence Test**: Join Browser A and Browser B. Verify the Online Users count reads `2 Online` with distinct user color badges.
-6. **Global Undo/Redo Test**:
-   - User A draws stroke A1.
-   - User B draws stroke B1.
-   - User B clicks **Undo** (or `Ctrl+Z`).
-   - Operation B1 is undone on **both** browsers.
-7. **Reconnection & Late-Joiner Test**: Open a new tab Browser C after drawing operations exist. Browser C instantly fetches the server snapshot and replays all vector operations.
-8. **Room Isolation Test**: Switch Browser B to room `playground` using the room pill button. Drawings in room `playground` do not leak into room `default`.
+1. Open `http://localhost:3000` in **Browser A** and an Incognito window (**Browser B**).
+2. Draw a stroke in Browser A — observe it stream live in Browser B as you draw.
+3. Draw simultaneously in both windows to test real-time sequence conflict resolution.
+4. Observe live remote cursor pointers gliding smoothly with user tags.
+5. Press `Ctrl + Z` in Browser B to test global vector undo across users.
+6. Switch Browser B to room `art-studio` via the room button to test room isolation.
 
 ---
 
@@ -107,4 +90,3 @@ Run through these 8 test scenarios to verify application correctness:
 | `T` | Select Text Tool |
 | `Ctrl` + `Z` / `Cmd` + `Z` | Global Undo |
 | `Ctrl` + `Y` / `Ctrl` + `Shift` + `Z` | Global Redo |
-

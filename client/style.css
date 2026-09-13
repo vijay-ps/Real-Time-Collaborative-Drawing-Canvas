@@ -122,6 +122,17 @@ body, html {
   color: var(--text-main);
 }
 
+.room-pill .settings-icon {
+  margin-left: 2px;
+  color: var(--text-dim);
+  transition: transform 0.3s ease, color 0.15s ease;
+}
+
+.room-pill:hover .settings-icon {
+  color: var(--text-main);
+  transform: rotate(45deg);
+}
+
 .room-name {
   font-weight: 600;
   color: var(--primary-color);

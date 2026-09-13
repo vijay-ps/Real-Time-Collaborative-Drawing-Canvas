@@ -24,7 +24,7 @@ class CanvasEngine {
 
     // Active Tool & Style State
     this.currentTool = 'brush'; // brush, eraser, line, rectangle, circle, text
-    this.currentColor = '#3B82F6';
+    this.currentColor = '#2563EB';
     this.strokeWidth = 5;
 
     // Local Drawing State
@@ -138,7 +138,7 @@ class CanvasEngine {
   onPointerMove(e) {
     const pt = this.getPointerCoords(e);
 
-    // Broadcast cursor position (throttled inside WS manager)
+    // Broadcast cursor position
     if (window.canvasWS && window.canvasWS.isConnected) {
       window.canvasWS.send({
         type: 'cursor:move',
@@ -371,7 +371,6 @@ class CanvasEngine {
   redrawAll() {
     this.clearOffscreenCtx();
 
-    // Ensure operations are ordered by sequence
     const activeOps = this.operations
       .filter(op => !op.undone)
       .sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
@@ -417,7 +416,7 @@ class CanvasEngine {
   }
 
   /**
-   * Render Remote User Cursors with glowing user tags at 60 FPS
+   * Render Remote User Cursors with user tags
    */
   renderCursors() {
     this.curCtx.clearRect(0, 0, this.width, this.height);
@@ -432,8 +431,8 @@ class CanvasEngine {
       this.curCtx.beginPath();
       this.curCtx.arc(x, y, isDrawing ? 8 : 5, 0, Math.PI * 2);
       this.curCtx.fillStyle = userColor;
-      this.curCtx.shadowColor = userColor;
-      this.curCtx.shadowBlur = 10;
+      this.curCtx.shadowColor = 'rgba(0,0,0,0.15)';
+      this.curCtx.shadowBlur = 6;
       this.curCtx.fill();
 
       if (isDrawing) {
@@ -496,7 +495,8 @@ class CanvasEngine {
     tempCanvas.height = this.height * this.dpr;
     const tempCtx = tempCanvas.getContext('2d');
 
-    tempCtx.fillStyle = '#0E131F';
+    // Fill clean white background
+    tempCtx.fillStyle = '#FFFFFF';
     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
     tempCtx.drawImage(this.offscreenCanvas, 0, 0);
 

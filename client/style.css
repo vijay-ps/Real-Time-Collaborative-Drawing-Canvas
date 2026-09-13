@@ -1,27 +1,27 @@
 /* ==========================================================================
    Design System & Styling - Real-Time Collaborative Canvas
-   Fully Responsive for Mobile, Tablet, Laptop, and Desktop Screens
+   Clean, Modern Light Theme Mode
    ========================================================================== */
 
 :root {
-  --bg-dark: #0B0F19;
-  --bg-card: rgba(18, 24, 38, 0.85);
-  --bg-card-hover: rgba(30, 41, 59, 0.9);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
+  --bg-app: #F1F5F9;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-card-hover: #F8FAFC;
+  --glass-border: rgba(226, 232, 240, 0.8);
+  --glass-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
   --glass-backdrop: blur(16px);
 
-  --primary-color: #3B82F6;
-  --primary-hover: #2563EB;
-  --accent-glow: rgba(59, 130, 246, 0.35);
+  --primary-color: #2563EB;
+  --primary-hover: #1D4ED8;
+  --accent-glow: rgba(37, 99, 235, 0.2);
 
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
-  --text-dim: #64748B;
+  --text-main: #0F172A;
+  --text-muted: #475569;
+  --text-dim: #94A3B8;
 
-  --danger-color: #EF4444;
-  --success-color: #10B981;
-  --warning-color: #F59E0B;
+  --danger-color: #DC2626;
+  --success-color: #059669;
+  --warning-color: #D97706;
 
   --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -42,7 +42,7 @@ body, html {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: var(--bg-dark);
+  background-color: var(--bg-app);
   color: var(--text-main);
   font-family: var(--font-family);
   font-size: 14px;
@@ -59,7 +59,7 @@ body, html {
 }
 
 /* ==========================================================================
-   Top Navigation Header
+   Top Navigation Header - Light Mode
    ========================================================================== */
 
 .app-header {
@@ -73,7 +73,7 @@ body, html {
   justify-content: space-between;
   padding: 0 20px;
   z-index: 50;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
   gap: 12px;
 }
 
@@ -86,13 +86,14 @@ body, html {
 
 .logo-icon {
   font-size: 24px;
-  filter: drop-shadow(0 0 8px var(--accent-glow));
+  filter: drop-shadow(0 2px 4px var(--accent-glow));
 }
 
 .brand-text h1 {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.5px;
+  color: var(--text-main);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -110,7 +111,7 @@ body, html {
 }
 
 @keyframes pulse-live {
-  0% { opacity: 0.8; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  0% { opacity: 0.8; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
   70% { opacity: 1; box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
   100% { opacity: 0.8; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
@@ -130,7 +131,7 @@ body, html {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  background: #F1F5F9;
   border: 1px solid var(--glass-border);
   padding: 6px 14px;
   border-radius: 20px;
@@ -140,8 +141,8 @@ body, html {
 }
 
 .room-pill:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #E2E8F0;
+  border-color: #CBD5E1;
   transform: translateY(-1px);
 }
 
@@ -161,7 +162,7 @@ body, html {
 .telemetry-bar {
   display: flex;
   gap: 10px;
-  background: rgba(0, 0, 0, 0.3);
+  background: #F1F5F9;
   padding: 4px 10px;
   border-radius: 8px;
   border: 1px solid var(--glass-border);
@@ -176,7 +177,7 @@ body, html {
 }
 
 .metric-label {
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .metric-val {
@@ -189,7 +190,7 @@ body, html {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: #F1F5F9;
   border: 1px solid var(--glass-border);
   padding: 4px 12px;
   border-radius: 20px;
@@ -217,11 +218,12 @@ body, html {
   font-weight: 700;
   font-size: 12px;
   color: #FFF;
-  border: 2px solid var(--bg-dark);
+  border: 2px solid #FFF;
   margin-left: -8px;
   position: relative;
   transition: transform 0.2s ease;
   cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .user-avatar:first-child {
@@ -234,7 +236,7 @@ body, html {
 }
 
 /* ==========================================================================
-   Canvas Workspace & Touch Behavior
+   Canvas Workspace - Clean Light Grid
    ========================================================================== */
 
 .canvas-workspace {
@@ -242,13 +244,13 @@ body, html {
   position: relative;
   width: 100%;
   height: calc(100vh - var(--header-height));
-  background-color: #0E131F;
+  background-color: #FFFFFF;
   background-image: 
-    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+    radial-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 0);
   background-size: 24px 24px;
   overflow: hidden;
   cursor: crosshair;
-  touch-action: none; /* Prevents mobile pull-to-refresh & scroll gestures while drawing */
+  touch-action: none;
 }
 
 .canvas-layer {
@@ -261,12 +263,12 @@ body, html {
 }
 
 #preview-canvas {
-  pointer-events: auto; /* Listens to mouse & touch events */
+  pointer-events: auto;
   touch-action: none;
 }
 
 /* ==========================================================================
-   Floating Glassmorphism Toolbar
+   Floating Light Toolbar
    ========================================================================== */
 
 .floating-toolbar {
@@ -321,7 +323,7 @@ body, html {
 }
 
 .tool-btn:hover, .action-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: #F1F5F9;
   color: var(--text-main);
   transform: translateY(-2px);
 }
@@ -341,7 +343,7 @@ body, html {
   top: -36px;
   left: 50%;
   transform: translateX(-50%) scale(0.9);
-  background: #000;
+  background: #0F172A;
   color: #FFF;
   padding: 4px 8px;
   border-radius: 6px;
@@ -350,6 +352,7 @@ body, html {
   opacity: 0;
   pointer-events: none;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .tool-btn:hover .tool-tooltip {
@@ -370,7 +373,8 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
+  background: #F1F5F9;
+  border: 1px solid var(--glass-border);
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -378,7 +382,7 @@ body, html {
 .size-preview-dot {
   width: 5px;
   height: 5px;
-  background: #FFF;
+  background: var(--text-main);
   border-radius: 50%;
   transition: width 0.1s ease, height 0.1s ease;
 }
@@ -388,7 +392,7 @@ body, html {
   width: 70px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.2);
+  background: #E2E8F0;
   outline: none;
 }
 
@@ -446,7 +450,7 @@ body, html {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 2px solid rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
@@ -457,19 +461,19 @@ body, html {
 }
 
 .swatch.active {
-  border-color: #FFF;
+  border-color: #0F172A;
   transform: scale(1.2);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 8px rgba(15, 23, 42, 0.3);
 }
 
 /* Action Buttons */
 .action-btn.danger:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: #FEE2E2;
   color: var(--danger-color);
 }
 
 .action-btn.success:hover {
-  background: rgba(16, 185, 129, 0.2);
+  background: #D1FAE5;
   color: var(--success-color);
 }
 
@@ -509,7 +513,7 @@ body, html {
 }
 
 /* ==========================================================================
-   Modal Dialogs
+   Modal Dialogs - Light Mode
    ========================================================================== */
 
 .modal-backdrop {
@@ -518,7 +522,7 @@ body, html {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(15, 23, 42, 0.4);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -535,9 +539,9 @@ body, html {
 }
 
 .modal-card {
-  background: #131A2B;
+  background: #FFFFFF;
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
   border-radius: 18px;
   width: 90%;
   max-width: 420px;
@@ -560,6 +564,7 @@ body, html {
 .modal-header h2 {
   font-size: 20px;
   font-weight: 700;
+  color: var(--text-main);
 }
 
 .modal-close {
@@ -586,11 +591,11 @@ body, html {
 
 .form-group input {
   width: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--glass-border);
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
   border-radius: 10px;
   padding: 10px 14px;
-  color: #FFF;
+  color: var(--text-main);
   font-family: var(--font-family);
   font-size: 14px;
   outline: none;
@@ -599,7 +604,7 @@ body, html {
 
 .form-group input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 10px var(--accent-glow);
+  box-shadow: 0 0 8px var(--accent-glow);
 }
 
 .room-quick-links {
@@ -616,8 +621,8 @@ body, html {
 }
 
 .btn-chip {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--glass-border);
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
   color: var(--text-muted);
   padding: 4px 10px;
   border-radius: 12px;
@@ -656,14 +661,13 @@ body, html {
    Responsive Breakpoints: Mobile, Tablet, Laptop, Desktop
    ========================================================================== */
 
-/* Tablets & Small Laptops (max-width: 900px) */
 @media (max-width: 900px) {
   .app-header {
     padding: 0 12px;
   }
 
   .tagline {
-    display: none; /* Hide tagline to free up space */
+    display: none;
   }
 
   .telemetry-bar {
@@ -680,7 +684,7 @@ body, html {
   }
 
   .action-text {
-    display: none; /* Hide text on smaller screens, show icons only */
+    display: none;
   }
 
   .tool-btn, .action-btn {
@@ -692,7 +696,6 @@ body, html {
   }
 }
 
-/* Mobile Phones (max-width: 600px) */
 @media (max-width: 600px) {
   :root {
     --header-height: 54px;
@@ -708,7 +711,7 @@ body, html {
   }
 
   .room-label, .room-switch-hint {
-    display: none; /* Show only room name on small phones */
+    display: none;
   }
 
   .room-pill {
@@ -716,7 +719,7 @@ body, html {
   }
 
   .telemetry-bar {
-    display: none; /* Hide FPS/Ping on narrow mobile screens to prioritize users count */
+    display: none;
   }
 
   .users-counter {
@@ -753,7 +756,6 @@ body, html {
     height: 16px;
   }
 
-  /* Hide extra color swatches on tiny screens so bar fits comfortably */
   .swatch:nth-child(n+6) {
     display: none;
   }

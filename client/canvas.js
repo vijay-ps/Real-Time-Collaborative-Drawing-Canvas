@@ -29,10 +29,15 @@ class CanvasEngine {
     this.isPanning = false;
     this.lastPanScreenPoint = null;
 
-    // Active Tool & Style State
-    this.currentTool = 'brush'; // select (pan), brush, eraser, line, rectangle, circle, text
+    // Active Tool & Style State - Default to Cursor / Pan tool (select)
+    this.currentTool = 'select'; // select (pan), brush, eraser, line, rectangle, circle, text
     this.currentColor = '#2563EB';
     this.strokeWidth = 5;
+
+    // Set initial canvas cursor to grab
+    if (this.container) {
+      this.container.style.cursor = 'grab';
+    }
 
     // Local Drawing State
     this.isDrawing = false;

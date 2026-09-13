@@ -29,6 +29,13 @@ class CanvasEngine {
     this.isPanning = false;
     this.lastPanScreenPoint = null;
 
+    // Mobile Multi-Touch Pinch Zoom & Pan State
+    this.isPinching = false;
+    this.pinchStartDistance = 0;
+    this.pinchStartZoom = 1.0;
+    this.pinchStartCenter = null;
+    this.pinchStartPan = { x: 0, y: 0 };
+
     // Active Tool & Style State - Default to Cursor / Pan tool (select)
     this.currentTool = 'select'; // select (pan), brush, eraser, line, rectangle, circle, text
     this.currentColor = '#2563EB';
@@ -106,12 +113,79 @@ class CanvasEngine {
     el.addEventListener('pointerup', (e) => this.onPointerUp(e));
     el.addEventListener('pointercancel', (e) => this.onPointerUp(e));
 
-    // Mouse wheel / Pinch zoom handler
+    // Mouse wheel zoom handler
     el.addEventListener('wheel', (e) => {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.12 : 0.88;
       this.zoomAt(e.clientX, e.clientY, factor);
     }, { passive: false });
+
+    // Mobile Multi-Touch Pinch Zoom & Pan Gesture Listeners
+    el.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+    el.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
+    el.addEventListener('touchend', (e) => this.onTouchEnd(e), { passive: false });
+    el.addEventListener('touchcancel', (e) => this.onTouchEnd(e), { passive: false });
+  }
+
+  onTouchStart(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      this.isPinching = true;
+      this.isDrawing = false;
+      this.isPanning = false;
+
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+
+      this.pinchStartDistance = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      this.pinchStartZoom = this.zoomLevel;
+
+      const rect = this.previewCanvas.getBoundingClientRect();
+      const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
+      const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
+
+      this.pinchStartCenter = { x: midX, y: midY };
+      this.pinchStartPan = { x: this.panX, y: this.panY };
+    }
+  }
+
+  onTouchMove(e) {
+    if (this.isPinching && e.touches.length === 2) {
+      e.preventDefault();
+
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+
+      const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      if (this.pinchStartDistance <= 0) return;
+
+      const scale = currentDist / this.pinchStartDistance;
+      const newZoom = Math.max(0.2, Math.min(5.0, this.pinchStartZoom * scale));
+
+      const rect = this.previewCanvas.getBoundingClientRect();
+      const currentMidX = (t1.clientX + t2.clientX) / 2 - rect.left;
+      const currentMidY = (t1.clientY + t2.clientY) / 2 - rect.top;
+
+      // Focal point pinch-to-zoom math
+      const worldX = (this.pinchStartCenter.x - this.pinchStartPan.x) / this.pinchStartZoom;
+      const worldY = (this.pinchStartCenter.y - this.pinchStartPan.y) / this.pinchStartZoom;
+
+      this.zoomLevel = newZoom;
+      this.panX = currentMidX - worldX * this.zoomLevel;
+      this.panY = currentMidY - worldY * this.zoomLevel;
+
+      this.updateZoomUI();
+      this.redrawAll();
+      this.renderPreview();
+    }
+  }
+
+  onTouchEnd(e) {
+    if (this.isPinching && e.touches.length < 2) {
+      this.isPinching = false;
+      this.pinchStartDistance = 0;
+      this.pinchStartCenter = null;
+    }
   }
 
   getPointerCoords(e) {
@@ -182,6 +256,7 @@ class CanvasEngine {
   }
 
   onPointerDown(e) {
+    if (this.isPinching) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return; // Left click only
 
     if (this.currentTool === 'select') {
@@ -224,6 +299,7 @@ class CanvasEngine {
   }
 
   onPointerMove(e) {
+    if (this.isPinching) return;
     if (this.isPanning) {
       const dx = e.clientX - this.lastPanScreenPoint.x;
       const dy = e.clientY - this.lastPanScreenPoint.y;

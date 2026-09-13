@@ -1,5 +1,6 @@
 /* ==========================================================================
    Design System & Styling - Real-Time Collaborative Canvas
+   Fully Responsive for Mobile, Tablet, Laptop, and Desktop Screens
    ========================================================================== */
 
 :root {
@@ -9,22 +10,22 @@
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
   --glass-backdrop: blur(16px);
-  
+
   --primary-color: #3B82F6;
   --primary-hover: #2563EB;
   --accent-glow: rgba(59, 130, 246, 0.35);
-  
+
   --text-main: #F8FAFC;
   --text-muted: #94A3B8;
   --text-dim: #64748B;
-  
+
   --danger-color: #EF4444;
   --success-color: #10B981;
   --warning-color: #F59E0B;
-  
+
   --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  
+
   --header-height: 64px;
 }
 
@@ -34,6 +35,7 @@
   padding: 0;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body, html {
@@ -53,6 +55,7 @@ body, html {
   width: 100vw;
   height: 100vh;
   position: relative;
+  overflow: hidden;
 }
 
 /* ==========================================================================
@@ -71,12 +74,14 @@ body, html {
   padding: 0 20px;
   z-index: 50;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  gap: 12px;
 }
 
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .logo-icon {
@@ -118,18 +123,20 @@ body, html {
 .header-center {
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .room-pill {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
   padding: 6px 14px;
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .room-pill:hover {
@@ -147,7 +154,8 @@ body, html {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .telemetry-bar {
@@ -191,6 +199,7 @@ body, html {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .users-avatars {
@@ -225,7 +234,7 @@ body, html {
 }
 
 /* ==========================================================================
-   Canvas Workspace & Layers
+   Canvas Workspace & Touch Behavior
    ========================================================================== */
 
 .canvas-workspace {
@@ -239,6 +248,7 @@ body, html {
   background-size: 24px 24px;
   overflow: hidden;
   cursor: crosshair;
+  touch-action: none; /* Prevents mobile pull-to-refresh & scroll gestures while drawing */
 }
 
 .canvas-layer {
@@ -251,7 +261,8 @@ body, html {
 }
 
 #preview-canvas {
-  pointer-events: auto; /* Listens to mouse/touch events */
+  pointer-events: auto; /* Listens to mouse & touch events */
+  touch-action: none;
 }
 
 /* ==========================================================================
@@ -275,6 +286,7 @@ body, html {
   gap: 12px;
   z-index: 40;
   transition: all 0.3s ease;
+  max-width: 95vw;
 }
 
 .toolbar-section {
@@ -287,6 +299,7 @@ body, html {
   width: 1px;
   height: 28px;
   background: var(--glass-border);
+  flex-shrink: 0;
 }
 
 .tool-btn, .action-btn {
@@ -304,6 +317,7 @@ body, html {
   font-weight: 500;
   position: relative;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
 }
 
 .tool-btn:hover, .action-btn:hover {
@@ -347,7 +361,7 @@ body, html {
 .size-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .size-preview-wrapper {
@@ -358,6 +372,7 @@ body, html {
   justify-content: center;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .size-preview-dot {
@@ -370,7 +385,7 @@ body, html {
 
 .slider {
   -webkit-appearance: none;
-  width: 80px;
+  width: 70px;
   height: 4px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.2);
@@ -409,6 +424,7 @@ body, html {
   overflow: hidden;
   border: 2px solid var(--glass-border);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 #native-color-picker {
@@ -433,6 +449,7 @@ body, html {
   border: 2px solid transparent;
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
 }
 
 .swatch:hover {
@@ -590,6 +607,7 @@ body, html {
   align-items: center;
   gap: 8px;
   margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .room-quick-links span {
@@ -632,4 +650,130 @@ body, html {
 
 .btn-primary:hover {
   background: var(--primary-hover);
+}
+
+/* ==========================================================================
+   Responsive Breakpoints: Mobile, Tablet, Laptop, Desktop
+   ========================================================================== */
+
+/* Tablets & Small Laptops (max-width: 900px) */
+@media (max-width: 900px) {
+  .app-header {
+    padding: 0 12px;
+  }
+
+  .tagline {
+    display: none; /* Hide tagline to free up space */
+  }
+
+  .telemetry-bar {
+    padding: 2px 6px;
+  }
+
+  .floating-toolbar {
+    bottom: 16px;
+    padding: 6px 10px;
+    gap: 8px;
+    overflow-x: auto;
+    max-width: 98vw;
+    border-radius: 14px;
+  }
+
+  .action-text {
+    display: none; /* Hide text on smaller screens, show icons only */
+  }
+
+  .tool-btn, .action-btn {
+    padding: 6px 8px;
+  }
+
+  .slider {
+    width: 50px;
+  }
+}
+
+/* Mobile Phones (max-width: 600px) */
+@media (max-width: 600px) {
+  :root {
+    --header-height: 54px;
+  }
+
+  .brand-text h1 {
+    font-size: 15px;
+  }
+
+  .badge-live {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .room-label, .room-switch-hint {
+    display: none; /* Show only room name on small phones */
+  }
+
+  .room-pill {
+    padding: 4px 10px;
+  }
+
+  .telemetry-bar {
+    display: none; /* Hide FPS/Ping on narrow mobile screens to prioritize users count */
+  }
+
+  .users-counter {
+    font-size: 11px;
+  }
+
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .floating-toolbar {
+    bottom: 10px;
+    padding: 6px 8px;
+    gap: 6px;
+    width: calc(100vw - 16px);
+    max-width: none;
+    border-radius: 12px;
+    justify-content: space-between;
+    overflow-x: auto;
+  }
+
+  .toolbar-divider {
+    height: 20px;
+  }
+
+  .palette-swatches {
+    gap: 2px;
+  }
+
+  .swatch {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Hide extra color swatches on tiny screens so bar fits comfortably */
+  .swatch:nth-child(n+6) {
+    display: none;
+  }
+
+  .size-label {
+    display: none;
+  }
+
+  .slider {
+    width: 40px;
+  }
+
+  .toast-container {
+    top: 64px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .toast {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
 }

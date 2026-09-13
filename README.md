@@ -83,7 +83,7 @@ Run through these 8 test scenarios to verify application correctness:
 2. **Live Remote Sync Test**: Open Browser B side-by-side with Browser A. Draw in Browser A and observe the stroke streaming in real-time in Browser B *while* drawing.
 3. **Simultaneous Overlapping Strokes**: Draw overlapping strokes simultaneously in Browser A and B. Both browsers converge to the exact same visual state (Server Sequence Resolution).
 4. **Remote Cursor Tracking Test**: Move mouse in Browser A. Browser B displays User A's avatar tag and cursor ring moving smoothly in real-time (Linear Interpolation).
-5. **User Presence Test**: Join Browser A and Browser B. Verify the Online Users count reads `👥 2 Online` with distinct user color badges.
+5. **User Presence Test**: Join Browser A and Browser B. Verify the Online Users count reads `2 Online` with distinct user color badges.
 6. **Global Undo/Redo Test**:
    - User A draws stroke A1.
    - User B draws stroke B1.
@@ -108,22 +108,3 @@ Run through these 8 test scenarios to verify application correctness:
 | `Ctrl` + `Z` / `Cmd` + `Z` | Global Undo |
 | `Ctrl` + `Y` / `Ctrl` + `Shift` + `Z` | Global Redo |
 
----
-
-## 🐛 Known Limitations & Edge Cases
-
-1. **Large History Memory**: Vector operation replay iterates through history logs. For canvas sessions with over 10,000 continuous operations, history is capped and older undone ops are pruned.
-2. **Text Editing**: Placed text is rendered directly onto the canvas as vector text. Editing pre-existing placed text inline is not supported; however, undoing text operations removes them cleanly.
-3. **Pinch Zoom Sensitivity**: Mobile pinch-zoom scale factors are capped between 20% (`0.2x`) and 500% (`5.0x`) for stability.
-
----
-
-## ⏱️ Time Spent
-
-- **Architecture & System Design**: ~2.5 hours
-- **Canvas Engine & Bezier Path Smoothing**: ~3.5 hours
-- **WebSocket Protocol & Real-time State Sync**: ~3 hours
-- **Global Undo/Redo & Monotonic Sequence Solver**: ~2.5 hours
-- **UI Design, Light Theme Styling & UX**: ~2 hours
-- **Testing, Documentation & Deployment**: ~2 hours
-- **Total Time Spent**: ~15.5 hours

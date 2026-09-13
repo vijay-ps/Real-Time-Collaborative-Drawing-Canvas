@@ -28,6 +28,18 @@ A multi-user real-time drawing application built with **Vanilla JavaScript (HTML
 
 ---
 
+## 🛠️ Technical Architecture Highlights
+
+- **3-Layer Canvas Engine**: 
+  - `offscreen-canvas`: Holds all finalized, committed vector drawings.
+  - `preview-canvas`: Renders active local/remote strokes in real-time with a zero-flicker bridge.
+  - `cursor-canvas`: Renders remote user cursor pointers with 60 FPS linear interpolation (Lerp).
+- **Network Optimization**: Points are batched every ~20ms to prevent WebSocket event flooding during fast mouse/touch moves.
+- **Conflict Resolution**: Server assigns monotonic sequence numbers to incoming operations so all clients render overlapping strokes in exact sequence.
+- **Mobile Gestures**: Native multi-touch gesture handlers support 2-finger pinch-to-zoom and 2-finger panning across mobile devices.
+
+---
+
 ## 📁 Repository Structure
 
 ```

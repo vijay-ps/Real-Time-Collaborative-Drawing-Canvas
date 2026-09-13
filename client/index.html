@@ -29,6 +29,9 @@
           <span class="room-name" id="current-room-display">default</span>
           <span class="room-switch-hint">⚙️</span>
         </div>
+        <button class="btn-help-pill" id="shortcuts-btn" title="Keyboard Shortcuts Guide">
+          <span>❓ Hotkeys</span>
+        </button>
       </div>
 
       <div class="header-right">
@@ -107,16 +110,16 @@
         <!-- Color Palette -->
         <div class="toolbar-section color-group">
           <div class="color-picker-wrapper">
-            <input type="color" id="native-color-picker" value="#3B82F6" title="Custom Color Picker">
+            <input type="color" id="native-color-picker" value="#2563EB" title="Custom Color Picker">
           </div>
           <div class="palette-swatches">
-            <button class="swatch active" data-color="#3B82F6" style="background-color: #3B82F6;"></button>
-            <button class="swatch" data-color="#EF4444" style="background-color: #EF4444;"></button>
-            <button class="swatch" data-color="#10B981" style="background-color: #10B981;"></button>
-            <button class="swatch" data-color="#F59E0B" style="background-color: #F59E0B;"></button>
-            <button class="swatch" data-color="#8B5CF6" style="background-color: #8B5CF6;"></button>
-            <button class="swatch" data-color="#EC4899" style="background-color: #EC4899;"></button>
-            <button class="swatch" data-color="#1E293B" style="background-color: #1E293B;"></button>
+            <button class="swatch active" data-color="#2563EB" style="background-color: #2563EB;"></button>
+            <button class="swatch" data-color="#DC2626" style="background-color: #DC2626;"></button>
+            <button class="swatch" data-color="#059669" style="background-color: #059669;"></button>
+            <button class="swatch" data-color="#D97706" style="background-color: #D97706;"></button>
+            <button class="swatch" data-color="#7C3AED" style="background-color: #7C3AED;"></button>
+            <button class="swatch" data-color="#DB2777" style="background-color: #DB2777;"></button>
+            <button class="swatch" data-color="#0F172A" style="background-color: #0F172A;"></button>
             <button class="swatch" data-color="#FFFFFF" style="background-color: #FFFFFF;"></button>
           </div>
         </div>
@@ -173,6 +176,28 @@
         </div>
         <div class="modal-footer">
           <button class="btn-primary" id="btn-join-room">Enter Room 🚀</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="modal-backdrop" id="shortcuts-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>⌨️ Keyboard Shortcuts</h2>
+          <button class="modal-close" id="shortcuts-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="shortcuts-grid">
+            <div class="shortcut-item"><kbd>B</kbd> <span>Select Brush Tool</span></div>
+            <div class="shortcut-item"><kbd>E</kbd> <span>Select Eraser Tool</span></div>
+            <div class="shortcut-item"><kbd>L</kbd> <span>Select Line Tool</span></div>
+            <div class="shortcut-item"><kbd>R</kbd> <span>Select Rectangle Tool</span></div>
+            <div class="shortcut-item"><kbd>C</kbd> <span>Select Circle Tool</span></div>
+            <div class="shortcut-item"><kbd>T</kbd> <span>Select Text Tool</span></div>
+            <div class="shortcut-item"><kbd>Ctrl + Z</kbd> <span>Global Undo</span></div>
+            <div class="shortcut-item"><kbd>Ctrl + Y</kbd> <span>Global Redo</span></div>
+          </div>
         </div>
       </div>
     </div>

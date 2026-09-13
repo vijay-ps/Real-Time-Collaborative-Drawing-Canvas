@@ -1,7 +1,7 @@
 /**
  * Main Application Coordinator
  * Connects Canvas Engine, WebSocket Client, DOM Toolbar UI, User List,
- * Modal Room Switcher, Keyboard Shortcuts, and Toast System.
+ * Modal Room Switcher, Shortcuts Modal, Keyboard Shortcuts, and Toast System.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,6 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnJoinRoom = document.getElementById('btn-join-room');
   const inputUserName = document.getElementById('input-user-name');
   const inputRoomId = document.getElementById('input-room-id');
+
+  const shortcutsBtn = document.getElementById('shortcuts-btn');
+  const shortcutsModal = document.getElementById('shortcuts-modal');
+  const shortcutsCloseBtn = document.getElementById('shortcuts-close-btn');
 
   const strokeSlider = document.getElementById('stroke-width-slider');
   const strokeValDisplay = document.getElementById('stroke-width-val');
@@ -58,6 +62,16 @@ document.addEventListener('DOMContentLoaded', () => {
      WebSocket Event Handlers
      ========================================================================== */
 
+  ws.on('disconnect', () => {
+    showToast('⚠️ Connection lost. Reconnecting to canvas server...', 'warning');
+  });
+
+  ws.on('connect', () => {
+    if (localUser) {
+      showToast('✅ Connection restored! Synchronizing canvas state...', 'info');
+    }
+  });
+
   ws.on('room:joined', (data) => {
     localUser = data.user;
     engine.operations = data.snapshot.operations || [];
@@ -79,13 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   ws.on('cursor:moved', (data) => {
-    engine.remoteCursors.set(data.userId, {
-      x: data.x,
-      y: data.y,
-      userName: data.userName,
-      userColor: data.userColor,
-      isDrawing: data.isDrawing
-    });
+    // Lerp smooth target interpolation in Canvas engine
+    engine.updateRemoteCursor(data.userId, data);
   });
 
   ws.on('stroke:started', (data) => {
@@ -103,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   ws.on('op:committed', (data) => {
-    // Delete stream if exists
     for (const [sId, stream] of engine.remoteStreams.entries()) {
       if (stream.userId === data.operation.userId) {
         engine.remoteStreams.delete(sId);
@@ -136,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ws.on('latency', (data) => {
     if (pingValDisplay) {
       pingValDisplay.textContent = `${data.latency} ms`;
-      pingValDisplay.style.color = data.latency < 80 ? '#10B981' : data.latency < 180 ? '#F59E0B' : '#EF4444';
+      pingValDisplay.style.color = data.latency < 80 ? '#059669' : data.latency < 180 ? '#D97706' : '#DC2626';
     }
   });
 
@@ -158,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
       avatar.textContent = u.userName ? u.userName.charAt(0).toUpperCase() : 'U';
 
       if (u.userId === localUser?.userId) {
-        avatar.style.boxShadow = `0 0 0 2px #FFF`;
+        avatar.style.boxShadow = `0 0 0 2px #0F172A`;
       }
 
       usersAvatarsList.appendChild(avatar);
@@ -238,12 +246,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnSave.addEventListener('click', () => {
-    engine.exportImage(`collaborative-canvas-${currentRoomId}.png`);
+    engine.exportImage(currentRoomId, `collaborative-canvas-${currentRoomId}.png`);
     showToast('Exported canvas to PNG! 💾', 'success');
   });
 
   /* ==========================================================================
-     Room & Profile Modal Logic
+     Room & Shortcuts Modal Logic
      ========================================================================== */
 
   roomInfoBtn.addEventListener('click', () => {
@@ -254,6 +262,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   modalCloseBtn.addEventListener('click', () => {
     roomModal.classList.remove('active');
+  });
+
+  shortcutsBtn.addEventListener('click', () => {
+    shortcutsModal.classList.add('active');
+  });
+
+  shortcutsCloseBtn.addEventListener('click', () => {
+    shortcutsModal.classList.remove('active');
   });
 
   document.querySelectorAll('.btn-chip').forEach(chip => {
@@ -281,6 +297,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+      shortcutsModal.classList.toggle('active');
+      return;
+    }
 
     if (e.ctrlKey || e.metaKey) {
       if (e.key === 'z' || e.key === 'Z') {

@@ -15,22 +15,19 @@ const USER_COLORS = [
   '#FF4081'
 ];
 
-const ADJECTIVES = ['Creative', 'Swift', 'Bright', 'Cosmic', 'Vibrant', 'Agile', 'Dynamic', 'Clever', 'Bold', 'Epic'];
-const ANIMALS = ['Fox', 'Falcon', 'Panther', 'Otter', 'Lynx', 'Phoenix', 'Dolphin', 'Eagle', 'Koala', 'Tiger'];
-
 class RoomManager {
   constructor() {
     this.rooms = new Map(); // Room ID -> Map of connected clients
     this.clients = new Map(); // Client connection -> user data
     this.colorIndex = 0;
+    this.userCount = 0;
   }
 
-  // Create a random friendly user name and color for new users
+  // Create default user name (User 1, User 2...) and color for new users
   generateUserIdentity() {
     const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-    const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
-    const userName = `${adj} ${animal}`;
+    this.userCount++;
+    const userName = `User ${this.userCount}`;
     const userColor = USER_COLORS[this.colorIndex % USER_COLORS.length];
     this.colorIndex++;
     return { userId, userName, userColor };

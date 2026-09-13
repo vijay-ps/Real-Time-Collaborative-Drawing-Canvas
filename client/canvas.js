@@ -670,7 +670,7 @@ class CanvasEngine {
       }
 
       // Name tag
-      const tagText = userName || 'Artist';
+      const tagText = userName || 'User';
       this.curCtx.font = '600 11px Outfit, sans-serif';
       const textWidth = this.curCtx.measureText(tagText).width;
       const pillWidth = textWidth + 16;

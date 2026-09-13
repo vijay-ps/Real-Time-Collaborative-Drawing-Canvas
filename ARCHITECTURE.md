@@ -4,6 +4,12 @@ This document details the architectural decisions, distributed state synchroniza
 
 ---
 
+## 🌐 Live Production Demo
+- **Deployed Application**: [https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/](https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/)
+- **Target Platform**: Node.js Container (Heroku / Render / Railway)
+
+---
+
 ## 1. System Overview & Distributed State Model
 
 The application operates as a **server-authoritative distributed operation log system**. The HTML5 Canvas is treated purely as a **rendering surface**, while the **vector operation log** represents the application's actual source of truth.

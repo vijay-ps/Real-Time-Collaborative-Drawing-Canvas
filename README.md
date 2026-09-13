@@ -4,19 +4,27 @@ A high-performance, multi-user real-time drawing application built with **Vanill
 
 ---
 
+## 🌐 Live Production Demo
+
+### 🚀 **Live Demo URL**: [https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/](https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/)
+
+> **Testing Multi-User Real-Time Sync**: Open the live demo link in two separate browser windows (or an Incognito tab / mobile device) to see real-time stroke streaming, live remote cursors, and global vector undo/redo in action!
+
+---
+
 ## ✨ Features
 
 - **Pure Canvas Operations**: Zero drawing libraries (no Fabric.js/Konva). Implemented raw HTML5 Canvas API with Midpoint Quadratic Bezier path smoothing.
 - **Real-Time Stream Sync**: Streams live brush strokes as users draw (`stroke:start`, `stroke:point`, `stroke:end`) rather than waiting for stroke completion.
-- **Remote User Cursors**: Shows live mouse/touch pointer positions of other online users with custom user colors and name tags.
-- **Global & User Vector Undo/Redo**: Maintains a global vector operation log that re-evaluates canvas state deterministically when operations are undone or redone.
+- **Remote User Cursors**: Shows live mouse/touch pointer positions with linear interpolation (Lerp) for silky smooth movement, custom user colors, and name tags.
+- **Global Vector Undo/Redo**: Maintains a global vector operation log that re-evaluates canvas state deterministically when operations are undone or redone.
 - **Drawing Tools**: Brush, Eraser, Line, Rectangle, Circle, and Interactive Text placement.
 - **Stroke & Color Controls**: Dynamic stroke width slider with live dot preview + palette swatches + native HTML5 color picker.
 - **Room System**: Multi-room support via URL query parameters (`?room=art-studio`) or live in-app room switcher modal.
 - **Telemetry HUD**: Real-time FPS counter and WebSocket RTT latency display (ping/pong).
-- **Exporting**: Export high-resolution composite PNG drawings with dark canvas background.
-- **Keyboard Shortcuts**: Intuitive hotkeys for tools (`B`, `E`, `L`, `R`, `C`, `T`) and undo/redo (`Ctrl+Z`, `Ctrl+Y`).
-- **Responsive & Touch Enabled**: Supports touch events (`pointerdown`, `pointermove`, `pointerup`) on mobile devices and tablets.
+- **Watermarked Image Export**: Export high-resolution composite PNG drawings with room name and timestamp watermark.
+- **Keyboard Shortcuts Guide**: Interactive modal (`?` hotkey) displaying all tool and action hotkeys.
+- **Responsive & Touch Enabled**: Supports touch events (`pointerdown`, `pointermove`, `pointerup`) on mobile devices and tablets with disabled pull-to-refresh gestures.
 
 ---
 
@@ -25,9 +33,9 @@ A high-performance, multi-user real-time drawing application built with **Vanill
 ```
 collaborative-canvas/
 ├── client/
-│   ├── index.html        # Main DOM layout, floating glassmorphism toolbar & modals
-│   ├── style.css         # Custom dark theme, glassmorphism, responsive styles
-│   ├── canvas.js         # Pure Canvas API engine, layer buffer, path smoothing
+│   ├── index.html        # Main DOM layout, header, floating toolbar & modals
+│   ├── style.css         # Modern Light Theme CSS & responsive breakpoints
+│   ├── canvas.js         # Pure Canvas API engine, layer buffer, path smoothing & lerp
 │   ├── websocket.js      # WebSocket client with ping/pong latency & auto-reconnect
 │   └── main.js           # App controller, toolbar bindings & shortcut listeners
 ├── server/
@@ -35,6 +43,7 @@ collaborative-canvas/
 │   ├── rooms.js          # Room lifecycle, user identities & broadcast manager
 │   └── drawing-state.js  # Vector history log & global undo/redo state solver
 ├── package.json          # Node.js dependencies (express, ws) and start script
+├── Procfile              # Heroku deployment entrypoint
 ├── README.md             # Project overview, setup, and multi-user testing guide
 └── ARCHITECTURE.md       # Detailed technical architecture, protocol & data flow
 ```
@@ -70,7 +79,7 @@ Run through these 8 test scenarios to verify application correctness:
 1. **Basic Drawing Test**: Draw a stroke in Browser A. Verify it appears smoothly on your screen immediately (Client Prediction).
 2. **Live Remote Sync Test**: Open Browser B side-by-side with Browser A. Draw in Browser A and observe the stroke streaming in real-time in Browser B *while* drawing.
 3. **Simultaneous Overlapping Strokes**: Draw overlapping strokes simultaneously in Browser A and B. Both browsers converge to the exact same visual state (Server Sequence Resolution).
-4. **Remote Cursor Tracking Test**: Move mouse in Browser A. Browser B displays User A's avatar tag and cursor ring moving in real-time.
+4. **Remote Cursor Tracking Test**: Move mouse in Browser A. Browser B displays User A's avatar tag and cursor ring moving smoothly in real-time (Linear Interpolation).
 5. **User Presence Test**: Join Browser A and Browser B. Verify the Online Users count reads `👥 2 Online` with distinct user color badges.
 6. **Global Undo/Redo Test**:
    - User A draws stroke A1.
@@ -94,6 +103,7 @@ Run through these 8 test scenarios to verify application correctness:
 | `T` | Select Text Tool |
 | `Ctrl` + `Z` | Global Undo |
 | `Ctrl` + `Y` / `Ctrl` + `Shift` + `Z` | Global Redo |
+| `?` or `Shift` + `/` | Toggle Keyboard Shortcuts Modal |
 
 ---
 
@@ -111,6 +121,6 @@ Run through these 8 test scenarios to verify application correctness:
 - **Canvas Engine & Bezier Path Smoothing**: ~3.5 hours
 - **WebSocket Protocol & Real-time State Sync**: ~3 hours
 - **Global Undo/Redo & Monotonic Sequence Solver**: ~2.5 hours
-- **UI Design, Glassmorphism Styling & UX**: ~2 hours
-- **Testing & Documentation**: ~2 hours
+- **UI Design, Light Theme Styling & UX**: ~2 hours
+- **Testing, Documentation & Heroku Deployment**: ~2 hours
 - **Total Time Spent**: ~15.5 hours

@@ -97,7 +97,7 @@ Run through these 8 test scenarios to verify application correctness:
 ## ⚙️ Keyboard Shortcuts
 
 | Shortcut | Action |
-|---|---|
+| --- | --- |
 | `V` or `H` | Select Pan / Move Cursor Tool |
 | `B` | Select Brush Tool |
 | `E` | Select Eraser Tool |

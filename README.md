@@ -4,29 +4,30 @@ A high-performance, multi-user real-time drawing application built with **Vanill
 
 ---
 
-## 🌐 Live Production Demo & Video Walkthrough
+## 🌐 Live Production Links
 
-### 🚀 **Live Demo URL**: [https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/](https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/)
-
-### 🎥 **Video Demo Folder (Google Drive)**: [https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing](https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing)
+- **🚀 Live Demo URL**: [https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/](https://realtime-collaborative-canvas-f51da8d7c6ed.herokuapp.com/)
+- **📁 GitHub Repository**: [https://github.com/vijay-ps/Real-Time-Collaborative-Drawing-Canvas](https://github.com/vijay-ps/Real-Time-Collaborative-Drawing-Canvas)
+- **🎥 Video Demo Folder (Google Drive)**: [https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing](https://drive.google.com/drive/folders/1NLAx4XU6Cij5w9YYtnPhIfm4fSrnI7Vc?usp=sharing)
 
 > **Testing Multi-User Real-Time Sync**: Open the live demo link in two separate browser windows (or an Incognito tab / mobile device) to see real-time stroke streaming, live remote cursors, and global vector undo/redo in action!
 
 ---
 
-## ✨ Features
+## ✨ Implemented Features
 
-- **Pure Canvas Operations**: Zero drawing libraries (no Fabric.js/Konva). Implemented raw HTML5 Canvas API with Midpoint Quadratic Bezier path smoothing.
+- **Pure Canvas Operations**: Zero drawing libraries (no Fabric.js or Konva). Built with raw HTML5 Canvas 2D Context API and Midpoint Quadratic Bezier path smoothing.
 - **Real-Time Stream Sync**: Streams live brush strokes as users draw (`stroke:start`, `stroke:point`, `stroke:end`) rather than waiting for stroke completion.
-- **Remote User Cursors**: Shows live mouse/touch pointer positions with linear interpolation (Lerp) for silky smooth movement, custom user colors, and name tags.
-- **Global Vector Undo/Redo**: Maintains a global vector operation log that re-evaluates canvas state deterministically when operations are undone or redone.
-- **Drawing Tools**: Brush, Eraser, Line, Rectangle, Circle, and Interactive Text placement.
-- **Stroke & Color Controls**: Dynamic stroke width slider with live dot preview + palette swatches + native HTML5 color picker.
+- **Remote User Cursors**: Shows live mouse/touch pointer positions with linear interpolation (Lerp) for smooth movement, custom user colors, and name tags (`User 1`, `User 2`).
+- **Global Vector Undo/Redo**: Maintains a server-authoritative vector operation log. Undoing/redoing re-evaluates state deterministically across all connected clients.
+- **User-Specific Content Clear**: The Clear button erases only the local user's own drawings from the canvas, leaving other participants' drawings intact.
+- **Drawing & Shape Tools**: Brush (`B`), Eraser (`E`), Line (`L`), Rectangle (`R`), Circle (`C`), Text (`T`), and Pan/Cursor tool (`select` / `V`).
+- **Stroke & Color Controls**: Dynamic stroke width slider (1px–50px) with live dot preview + palette swatches + native HTML5 color picker.
 - **Room System**: Multi-room support via URL query parameters (`?room=art-studio`) or live in-app room switcher modal.
-- **Telemetry HUD**: Real-time FPS counter and WebSocket RTT latency display (ping/pong).
-- **Watermarked Image Export**: Export high-resolution composite PNG drawings with room name and timestamp watermark.
-- **Keyboard Shortcuts Guide**: Interactive modal (`?` hotkey) displaying all tool and action hotkeys.
-- **Responsive & Touch Enabled**: Supports touch events (`pointerdown`, `pointermove`, `pointerup`) on mobile devices and tablets with disabled pull-to-refresh gestures.
+- **Telemetry HUD**: Real-time FPS counter (canvas `requestAnimationFrame` loop) and WebSocket RTT latency display (ping/pong).
+- **PNG Image Export**: Export high-resolution PNG drawings directly to your device.
+- **Keyboard Shortcuts**: Built-in computer hotkeys for tools (`V`/`H`, `B`, `E`, `L`, `R`, `C`, `T`) and Undo/Redo (`Ctrl+Z`, `Ctrl+Y`, `Ctrl+Shift+Z`).
+- **Responsive & Mobile Touch**: Full 2-finger touch pinch-to-zoom, 2-finger pan, and 1-finger touch drawing support on mobile devices and tablets.
 
 ---
 
@@ -97,15 +98,15 @@ Run through these 8 test scenarios to verify application correctness:
 
 | Shortcut | Action |
 |---|---|
+| `V` or `H` | Select Pan / Move Cursor Tool |
 | `B` | Select Brush Tool |
 | `E` | Select Eraser Tool |
 | `L` | Select Line Tool |
 | `R` | Select Rectangle Tool |
 | `C` | Select Circle Tool |
 | `T` | Select Text Tool |
-| `Ctrl` + `Z` | Global Undo |
+| `Ctrl` + `Z` / `Cmd` + `Z` | Global Undo |
 | `Ctrl` + `Y` / `Ctrl` + `Shift` + `Z` | Global Redo |
-| `?` or `Shift` + `/` | Toggle Keyboard Shortcuts Modal |
 
 ---
 
@@ -113,7 +114,7 @@ Run through these 8 test scenarios to verify application correctness:
 
 1. **Large History Memory**: Vector operation replay iterates through history logs. For canvas sessions with over 10,000 continuous operations, history is capped and older undone ops are pruned.
 2. **Text Editing**: Placed text is rendered directly onto the canvas as vector text. Editing pre-existing placed text inline is not supported; however, undoing text operations removes them cleanly.
-3. **Simultaneous Mobile Pinch-Zoom**: Browser viewport scaling on mobile devices is disabled (`user-scalable=no`) to ensure smooth touch drawing without triggering native page zoom.
+3. **Pinch Zoom Sensitivity**: Mobile pinch-zoom scale factors are capped between 20% (`0.2x`) and 500% (`5.0x`) for stability.
 
 ---
 

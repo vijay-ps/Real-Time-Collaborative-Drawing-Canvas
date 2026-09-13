@@ -204,11 +204,10 @@ wss.on('connection', (ws) => {
           const userData = roomManager.getUserData(ws);
           if (userData) {
             const state = drawingState.getRoomState(currentRoomId);
-            const { clearOp, clearedOpIds } = state.clear(userData.userId, userData.userName);
+            const { clearedOpIds } = state.clear(userData.userId, userData.userName);
 
             roomManager.broadcastToAllInRoom(currentRoomId, {
               type: 'room:cleared',
-              clearOp,
               clearedOpIds,
               userId: userData.userId,
               userName: userData.userName,

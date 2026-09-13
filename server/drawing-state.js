@@ -180,31 +180,18 @@ class RoomDrawingState {
   }
 
   /**
-   * Clear canvas for the room
+   * Clear canvas content for the requesting user only (clears operations created by userId)
    */
   clear(userId, userName) {
-    const clearOp = {
-      id: `op_clear_${Date.now()}`,
-      sequence: this.nextSequence++,
-      userId,
-      userName,
-      tool: 'clear',
-      timestamp: Date.now(),
-      undone: false
-    };
-
     const clearedOpIds = [];
     this.operations.forEach(op => {
-      if (!op.undone) {
+      if (op.userId === userId && !op.undone && op.tool !== 'clear') {
         op.undone = true;
         clearedOpIds.push(op.id);
       }
     });
 
-    this.operations.push(clearOp);
-    this.undoStack.push(clearOp.id);
-    this.redoStack = [];
-    return { clearOp, clearedOpIds };
+    return { clearedOpIds };
   }
 }
 

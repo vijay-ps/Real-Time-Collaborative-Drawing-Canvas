@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ws.on('room:cleared', (data) => {
     engine.operations = data.operations;
     engine.redrawAll();
-    showToast(`${data.userName} cleared the canvas 🗑️`, 'action');
+    showToast(`${data.userName} cleared their drawings 🗑️`, 'action');
   });
 
   ws.on('latency', (data) => {
@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnClear.addEventListener('click', () => {
-    if (confirm('Are you sure you want to clear the canvas for everyone in this room?')) {
+    if (confirm('Are you sure you want to clear your drawings from this canvas?')) {
       if (ws.isConnected) {
         ws.send({ type: 'room:clear' });
       }

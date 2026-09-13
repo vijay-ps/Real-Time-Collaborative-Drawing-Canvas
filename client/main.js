@@ -178,6 +178,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Fixed Top-Right Pan & Zoom Widget Controls
+  const fixedPanBtn = document.getElementById('fixed-pan-btn');
+  const btnZoomIn = document.getElementById('btn-zoom-in');
+  const btnZoomOut = document.getElementById('btn-zoom-out');
+  const btnZoomReset = document.getElementById('btn-zoom-reset');
+  const btnResetView = document.getElementById('btn-reset-view');
+
+  if (fixedPanBtn) {
+    fixedPanBtn.addEventListener('click', () => {
+      const selectToolBtn = document.querySelector('.tool-btn[data-tool="select"]');
+      if (selectToolBtn) selectToolBtn.click();
+    });
+  }
+
+  if (btnZoomIn) {
+    btnZoomIn.addEventListener('click', () => {
+      engine.zoomAt(undefined, undefined, 1.25);
+    });
+  }
+
+  if (btnZoomOut) {
+    btnZoomOut.addEventListener('click', () => {
+      engine.zoomAt(undefined, undefined, 0.8);
+    });
+  }
+
+  if (btnZoomReset) {
+    btnZoomReset.addEventListener('click', () => {
+      engine.resetView();
+      showToast('Reset view & zoom to 100%', 'info');
+    });
+  }
+
+  if (btnResetView) {
+    btnResetView.addEventListener('click', () => {
+      engine.resetView();
+      showToast('Centered canvas view', 'info');
+    });
+  }
+
   // Color Swatches
   document.querySelectorAll('.swatch').forEach(swatch => {
     swatch.addEventListener('click', () => {

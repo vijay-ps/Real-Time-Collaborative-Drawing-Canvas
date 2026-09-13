@@ -22,9 +22,10 @@ class CanvasEngine {
     this.height = 0;
     this.dpr = window.devicePixelRatio || 1;
 
-    // Viewport Panning Offset (Pan / Cursor Tool)
+    // Viewport Panning Offset & Zoom Scale (Pan / Cursor Tool)
     this.panX = 0;
     this.panY = 0;
+    this.zoomLevel = 1.0;
     this.isPanning = false;
     this.lastPanScreenPoint = null;
 
@@ -104,14 +105,21 @@ class CanvasEngine {
     el.addEventListener('pointermove', (e) => this.onPointerMove(e));
     el.addEventListener('pointerup', (e) => this.onPointerUp(e));
     el.addEventListener('pointercancel', (e) => this.onPointerUp(e));
+
+    // Mouse wheel / Pinch zoom handler
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.12 : 0.88;
+      this.zoomAt(e.clientX, e.clientY, factor);
+    }, { passive: false });
   }
 
   getPointerCoords(e) {
     const rect = this.previewCanvas.getBoundingClientRect();
-    // Return World space coordinates factoring in viewport pan offset
+    // Return World space coordinates factoring in viewport pan offset & zoom scale
     return {
-      x: (e.clientX - rect.left) - this.panX,
-      y: (e.clientY - rect.top) - this.panY
+      x: ((e.clientX - rect.left) - this.panX) / this.zoomLevel,
+      y: ((e.clientY - rect.top) - this.panY) / this.zoomLevel
     };
   }
 
@@ -121,6 +129,55 @@ class CanvasEngine {
       this.container.style.cursor = 'grab';
     } else {
       this.container.style.cursor = 'crosshair';
+    }
+    this.updatePanWidgetUI();
+  }
+
+  updatePanWidgetUI() {
+    const fixedPanBtn = document.getElementById('fixed-pan-btn');
+    if (fixedPanBtn) {
+      if (this.currentTool === 'select') {
+        fixedPanBtn.classList.add('active');
+      } else {
+        fixedPanBtn.classList.remove('active');
+      }
+    }
+  }
+
+  zoomAt(clientX, clientY, factor) {
+    const rect = this.previewCanvas.getBoundingClientRect();
+    const mouseX = clientX !== undefined ? (clientX - rect.left) : (this.width / 2);
+    const mouseY = clientY !== undefined ? (clientY - rect.top) : (this.height / 2);
+
+    const newZoom = Math.max(0.2, Math.min(5.0, this.zoomLevel * factor));
+    if (newZoom === this.zoomLevel) return;
+
+    // Center zoom transformation around mouse focal point
+    const worldX = (mouseX - this.panX) / this.zoomLevel;
+    const worldY = (mouseY - this.panY) / this.zoomLevel;
+
+    this.zoomLevel = newZoom;
+    this.panX = mouseX - worldX * this.zoomLevel;
+    this.panY = mouseY - worldY * this.zoomLevel;
+
+    this.updateZoomUI();
+    this.redrawAll();
+    this.renderPreview();
+  }
+
+  resetView() {
+    this.zoomLevel = 1.0;
+    this.panX = 0;
+    this.panY = 0;
+    this.updateZoomUI();
+    this.redrawAll();
+    this.renderPreview();
+  }
+
+  updateZoomUI() {
+    const display = document.getElementById('btn-zoom-reset');
+    if (display) {
+      display.textContent = `${Math.round(this.zoomLevel * 100)}%`;
     }
   }
 
@@ -451,6 +508,7 @@ class CanvasEngine {
 
     this.offCtx.save();
     this.offCtx.translate(this.panX, this.panY);
+    this.offCtx.scale(this.zoomLevel, this.zoomLevel);
 
     const activeOps = this.operations
       .filter(op => !op.undone)
@@ -479,6 +537,7 @@ class CanvasEngine {
 
     this.prevCtx.save();
     this.prevCtx.translate(this.panX, this.panY);
+    this.prevCtx.scale(this.zoomLevel, this.zoomLevel);
 
     // 1. Draw local in-progress stroke/shape
     if (this.isDrawing) {
@@ -522,6 +581,7 @@ class CanvasEngine {
 
     this.curCtx.save();
     this.curCtx.translate(this.panX, this.panY);
+    this.curCtx.scale(this.zoomLevel, this.zoomLevel);
 
     for (const [userId, cursor] of this.remoteCursors.entries()) {
       const { x, y, userName, userColor, isDrawing } = cursor;

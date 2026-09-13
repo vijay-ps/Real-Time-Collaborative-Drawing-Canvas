@@ -1,8 +1,7 @@
 /**
  * Canvas Engine - Pure HTML5 Canvas API Implementation
  * Multi-layer rendering, midpoint bezier path smoothing, shape rendering,
- * vector history sequence replay, remote cursor linear interpolation (lerp),
- * viewport panning, seamless zero-flicker layer transfer, and high-frequency point batching.
+ * vector history sequence replay, viewport panning, and high-frequency point batching.
  */
 
 class CanvasEngine {
@@ -49,7 +48,7 @@ class CanvasEngine {
 
     // Remote Drawing Streams & Cursors
     this.remoteStreams = new Map(); // streamId -> { tool, color, size, points }
-    this.remoteCursors = new Map(); // userId -> { x, y, targetX, targetY, userName, userColor, isDrawing }
+    this.remoteCursors = new Map(); // userId -> { x, y, userName, userColor, isDrawing }
 
     // Vector Operation History Log (Sorted by server sequence)
     this.operations = [];
@@ -262,28 +261,16 @@ class CanvasEngine {
   }
 
   /**
-   * Update or initialize remote cursor with target interpolation coordinates
+   * Update remote cursor position directly
    */
   updateRemoteCursor(userId, cursorData) {
-    let cursor = this.remoteCursors.get(userId);
-    if (!cursor) {
-      cursor = {
-        x: cursorData.x,
-        y: cursorData.y,
-        targetX: cursorData.x,
-        targetY: cursorData.y,
-        userName: cursorData.userName,
-        userColor: cursorData.userColor,
-        isDrawing: cursorData.isDrawing
-      };
-      this.remoteCursors.set(userId, cursor);
-    } else {
-      cursor.targetX = cursorData.x;
-      cursor.targetY = cursorData.y;
-      cursor.userName = cursorData.userName;
-      cursor.userColor = cursorData.userColor;
-      cursor.isDrawing = cursorData.isDrawing;
-    }
+    this.remoteCursors.set(userId, {
+      x: cursorData.x,
+      y: cursorData.y,
+      userName: cursorData.userName,
+      userColor: cursorData.userColor,
+      isDrawing: cursorData.isDrawing
+    });
   }
 
   /**
@@ -525,7 +512,7 @@ class CanvasEngine {
   }
 
   /**
-   * Render Remote User Cursors with Linear Interpolation (Lerp)
+   * Render Remote User Cursors directly without lerp
    */
   renderCursors() {
     this.curCtx.save();
@@ -537,12 +524,6 @@ class CanvasEngine {
     this.curCtx.translate(this.panX, this.panY);
 
     for (const [userId, cursor] of this.remoteCursors.entries()) {
-      // Linear interpolation (lerp) towards target coords
-      if (typeof cursor.targetX === 'number' && typeof cursor.targetY === 'number') {
-        cursor.x += (cursor.targetX - cursor.x) * 0.35;
-        cursor.y += (cursor.targetY - cursor.y) * 0.35;
-      }
-
       const { x, y, userName, userColor, isDrawing } = cursor;
       if (typeof x !== 'number' || typeof y !== 'number') continue;
 
@@ -613,7 +594,7 @@ class CanvasEngine {
   }
 
   /* ==========================================================================
-     Export Canvas Image with Watermark
+     Export Canvas Image
      ========================================================================== */
 
   exportImage(roomName = 'default', filename = 'collaborative-drawing.png') {
@@ -626,29 +607,6 @@ class CanvasEngine {
     tempCtx.fillStyle = '#FFFFFF';
     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
     tempCtx.drawImage(this.offscreenCanvas, 0, 0);
-
-    // Add elegant subtle watermark badge at bottom right
-    const dateStr = new Date().toLocaleDateString();
-    const watermarkText = `🎨 CanvasCraft  •  Room: ${roomName}  •  ${dateStr}`;
-    tempCtx.font = `600 ${12 * this.dpr}px Outfit, sans-serif`;
-    const textMetrics = tempCtx.measureText(watermarkText);
-
-    const padX = 14 * this.dpr;
-    const padY = 8 * this.dpr;
-    const badgeW = textMetrics.width + padX * 2;
-    const badgeH = 26 * this.dpr;
-    const badgeX = tempCanvas.width - badgeW - 16 * this.dpr;
-    const badgeY = tempCanvas.height - badgeH - 16 * this.dpr;
-
-    tempCtx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-    tempCtx.beginPath();
-    tempCtx.roundRect ? tempCtx.roundRect(badgeX, badgeY, badgeW, badgeH, 8 * this.dpr)
-                      : tempCtx.rect(badgeX, badgeY, badgeW, badgeH);
-    tempCtx.fill();
-
-    tempCtx.fillStyle = '#FFFFFF';
-    tempCtx.textBaseline = 'middle';
-    tempCtx.fillText(watermarkText, badgeX + padX, badgeY + badgeH / 2);
 
     const link = document.createElement('a');
     link.download = filename;

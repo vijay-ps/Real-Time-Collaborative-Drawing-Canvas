@@ -1,18 +1,15 @@
-/**
- * Canvas Engine - Pure HTML5 Canvas API Implementation
- * Multi-layer rendering, midpoint bezier path smoothing, shape rendering,
- * vector history sequence replay, viewport panning, and high-frequency point batching.
- */
+// Canvas Engine - Pure HTML5 Canvas API
+// Handles rendering drawing layers, tool inputs, smooth paths, shapes, viewport pan/zoom, and remote user cursors.
 
 class CanvasEngine {
   constructor() {
-    // DOM Elements
+    // DOM Elements for the 3 canvas layers
     this.container = document.getElementById('canvas-container');
-    this.offscreenCanvas = document.getElementById('offscreen-canvas'); // Persistent state layer
-    this.previewCanvas = document.getElementById('preview-canvas');     // Active stroke layer
+    this.offscreenCanvas = document.getElementById('offscreen-canvas'); // Main drawing layer
+    this.previewCanvas = document.getElementById('preview-canvas');     // Active stroke preview layer
     this.cursorCanvas = document.getElementById('cursor-canvas');       // Remote user cursors layer
 
-    // 2D Contexts
+    // 2D Drawing Contexts
     this.offCtx = this.offscreenCanvas.getContext('2d');
     this.prevCtx = this.previewCanvas.getContext('2d');
     this.curCtx = this.cursorCanvas.getContext('2d');
@@ -22,7 +19,7 @@ class CanvasEngine {
     this.height = 0;
     this.dpr = window.devicePixelRatio || 1;
 
-    // Viewport Panning Offset & Zoom Scale (Pan / Cursor Tool)
+    // Viewport Panning & Zoom Scale
     this.panX = 0;
     this.panY = 0;
     this.zoomLevel = 1.0;
@@ -36,12 +33,12 @@ class CanvasEngine {
     this.pinchStartCenter = null;
     this.pinchStartPan = { x: 0, y: 0 };
 
-    // Active Tool & Style State - Default to Cursor / Pan tool (select)
-    this.currentTool = 'select'; // select (pan), brush, eraser, line, rectangle, circle, text
+    // Default Tool & Style (Pan / Cursor tool selected by default)
+    this.currentTool = 'select'; // select, brush, eraser, line, rectangle, circle, text
     this.currentColor = '#2563EB';
     this.strokeWidth = 5;
 
-    // Set initial canvas cursor to grab
+    // Set initial cursor to grab for pan tool
     if (this.container) {
       this.container.style.cursor = 'grab';
     }
@@ -49,34 +46,31 @@ class CanvasEngine {
     // Local Drawing State
     this.isDrawing = false;
     this.currentPoints = [];
-    this.pendingPointBatch = []; // Batching queue for ~20ms network flush
-    this.pendingLocalStroke = null; // Zero-flicker bridge stroke until server commit
+    this.pendingPointBatch = []; // Points waiting to be sent over network
+    this.pendingLocalStroke = null; // Local preview stroke bridge
     this.startPoint = null;
     this.activeStreamId = null;
 
-    // Remote Drawing Streams & Cursors
-    this.remoteStreams = new Map(); // streamId -> { tool, color, size, points }
-    this.remoteCursors = new Map(); // userId -> { x, y, userName, userColor, isDrawing }
+    // Remote User Drawing Streams & Cursors
+    this.remoteStreams = new Map(); // streamId -> stroke details
+    this.remoteCursors = new Map(); // userId -> cursor position
 
-    // Vector Operation History Log (Sorted by server sequence)
+    // Drawing operations list from server
     this.operations = [];
 
-    // Performance & FPS Tracking
+    // FPS Counter Tracking
     this.frameCount = 0;
     this.lastFpsUpdate = performance.now();
     this.currentFps = 60;
 
-    // Bindings & Initialization
+    // Start listeners and loops
     this.initResize();
     this.bindPointerEvents();
     this.startNetworkBatchFlusher();
     this.startRenderLoop();
   }
 
-  /* ==========================================================================
-     Canvas Resizing & High-DPI (DPR) Setup
-     ========================================================================== */
-
+  // Resize canvases when window resizes
   initResize() {
     const resize = () => {
       const rect = this.container.getBoundingClientRect();
@@ -93,7 +87,6 @@ class CanvasEngine {
         ctx.scale(this.dpr, this.dpr);
       });
 
-      // Redraw offscreen state after resize
       this.redrawAll();
     };
 
@@ -101,10 +94,7 @@ class CanvasEngine {
     resize();
   }
 
-  /* ==========================================================================
-     Pointer & Touch Event Handlers
-     ========================================================================== */
-
+  // Bind mouse, touch, pointer, and wheel events
   bindPointerEvents() {
     const el = this.previewCanvas;
 
@@ -127,6 +117,7 @@ class CanvasEngine {
     el.addEventListener('touchcancel', (e) => this.onTouchEnd(e), { passive: false });
   }
 
+  // Handle 2-finger touch pinch start on mobile
   onTouchStart(e) {
     if (e.touches.length === 2) {
       e.preventDefault();
@@ -149,6 +140,7 @@ class CanvasEngine {
     }
   }
 
+  // Handle 2-finger touch pinch movement and zoom scaling
   onTouchMove(e) {
     if (this.isPinching && e.touches.length === 2) {
       e.preventDefault();
@@ -166,7 +158,6 @@ class CanvasEngine {
       const currentMidX = (t1.clientX + t2.clientX) / 2 - rect.left;
       const currentMidY = (t1.clientY + t2.clientY) / 2 - rect.top;
 
-      // Focal point pinch-to-zoom math
       const worldX = (this.pinchStartCenter.x - this.pinchStartPan.x) / this.pinchStartZoom;
       const worldY = (this.pinchStartCenter.y - this.pinchStartPan.y) / this.pinchStartZoom;
 
@@ -188,15 +179,16 @@ class CanvasEngine {
     }
   }
 
+  // Calculate canvas coordinates taking panning and zoom into account
   getPointerCoords(e) {
     const rect = this.previewCanvas.getBoundingClientRect();
-    // Return World space coordinates factoring in viewport pan offset & zoom scale
     return {
       x: ((e.clientX - rect.left) - this.panX) / this.zoomLevel,
       y: ((e.clientY - rect.top) - this.panY) / this.zoomLevel
     };
   }
 
+  // Change current tool
   setTool(tool) {
     this.currentTool = tool;
     if (tool === 'select') {
@@ -218,6 +210,7 @@ class CanvasEngine {
     }
   }
 
+  // Zoom canvas centered around mouse position
   zoomAt(clientX, clientY, factor) {
     const rect = this.previewCanvas.getBoundingClientRect();
     const mouseX = clientX !== undefined ? (clientX - rect.left) : (this.width / 2);
@@ -226,7 +219,6 @@ class CanvasEngine {
     const newZoom = Math.max(0.2, Math.min(5.0, this.zoomLevel * factor));
     if (newZoom === this.zoomLevel) return;
 
-    // Center zoom transformation around mouse focal point
     const worldX = (mouseX - this.panX) / this.zoomLevel;
     const worldY = (mouseY - this.panY) / this.zoomLevel;
 
@@ -239,6 +231,7 @@ class CanvasEngine {
     this.renderPreview();
   }
 
+  // Reset zoom to 100% and center view
   resetView() {
     this.zoomLevel = 1.0;
     this.panX = 0;
@@ -255,9 +248,10 @@ class CanvasEngine {
     }
   }
 
+  // Pointer Down (start stroke or start pan)
   onPointerDown(e) {
     if (this.isPinching) return;
-    if (e.button !== 0 && e.pointerType === 'mouse') return; // Left click only
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
 
     if (this.currentTool === 'select') {
       this.isPanning = true;
@@ -275,14 +269,14 @@ class CanvasEngine {
     this.pendingLocalStroke = null;
     this.activeStreamId = `stream_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
-    // Text tool handles click via prompt dialog
+    // Text tool prompts user for text string
     if (this.currentTool === 'text') {
       this.handleTextTool(pt);
       this.isDrawing = false;
       return;
     }
 
-    // Broadcast stroke start immediately
+    // Send stroke start to server
     if (window.canvasWS && window.canvasWS.isConnected) {
       window.canvasWS.send({
         type: 'stroke:start',
@@ -298,6 +292,7 @@ class CanvasEngine {
     this.renderPreview();
   }
 
+  // Pointer Move (drawing or panning)
   onPointerMove(e) {
     if (this.isPinching) return;
     if (this.isPanning) {
@@ -313,7 +308,7 @@ class CanvasEngine {
 
     const pt = this.getPointerCoords(e);
 
-    // Broadcast cursor position in world space
+    // Send cursor movement to server
     if (window.canvasWS && window.canvasWS.isConnected) {
       window.canvasWS.send({
         type: 'cursor:move',
@@ -331,6 +326,7 @@ class CanvasEngine {
     this.renderPreview();
   }
 
+  // Pointer Up (finish stroke or pan)
   onPointerUp(e) {
     if (this.isPanning) {
       this.isPanning = false;
@@ -347,10 +343,8 @@ class CanvasEngine {
       this.pendingPointBatch.push(pt);
     }
 
-    // Flush any remaining pending points before ending stroke
     this.flushPointBatch();
 
-    // Commit final operation to server
     const op = {
       id: `op_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       tool: this.currentTool,
@@ -362,7 +356,7 @@ class CanvasEngine {
       timestamp: Date.now()
     };
 
-    // Hold pending local preview stroke for seamless zero-flicker transfer until server op:committed arrives
+    // Keep preview visible until server commit response arrives
     this.pendingLocalStroke = {
       streamId: this.activeStreamId,
       points: [...this.currentPoints],
@@ -380,22 +374,18 @@ class CanvasEngine {
         operation: op
       });
     } else {
-      // Offline fallback
       this.pendingLocalStroke = null;
       this.operations.push(op);
       this.redrawAll();
     }
 
-    // Reset local drawing points
     this.currentPoints = [];
     this.pendingPointBatch = [];
     this.startPoint = null;
     this.activeStreamId = null;
   }
 
-  /**
-   * Update remote cursor position with target coordinates for Lerp interpolation
-   */
+  // Store target coordinates for smooth remote cursor movement
   updateRemoteCursor(userId, cursorData) {
     const existing = this.remoteCursors.get(userId);
     if (!existing) {
@@ -417,10 +407,7 @@ class CanvasEngine {
     }
   }
 
-  /**
-   * Network Event Batching Flusher (runs every ~20ms)
-   * Prevents WebSocket event flooding during high-frequency pointer moves
-   */
+  // Send pending drawing points over websocket every 20ms
   startNetworkBatchFlusher() {
     setInterval(() => {
       this.flushPointBatch();
@@ -466,13 +453,7 @@ class CanvasEngine {
     }
   }
 
-  /* ==========================================================================
-     Core Drawing & Path Smoothing Algorithms
-     ========================================================================== */
-
-  /**
-   * Midpoint Quadratic Bezier Path Smoothing algorithm
-   */
+  // Draw smooth brush or eraser strokes using quadratic curves
   drawSmoothPath(ctx, points, color, size, isEraser = false) {
     if (!points || points.length === 0) return;
 
@@ -515,6 +496,7 @@ class CanvasEngine {
     ctx.restore();
   }
 
+  // Draw lines, rectangles, or circles
   drawShape(ctx, tool, startPt, endPt, color, size, isEraser = false) {
     if (!startPt || !endPt) return;
 
@@ -560,6 +542,7 @@ class CanvasEngine {
     ctx.restore();
   }
 
+  // Render text on canvas
   drawText(ctx, pt, text, color, fontSize) {
     ctx.save();
     ctx.font = `500 ${fontSize}px Outfit, sans-serif`;
@@ -568,10 +551,6 @@ class CanvasEngine {
     ctx.fillText(text, pt.x, pt.y);
     ctx.restore();
   }
-
-  /* ==========================================================================
-     State Replay & Rendering Layers
-     ========================================================================== */
 
   clearPreviewCtx() {
     this.prevCtx.save();
@@ -587,9 +566,7 @@ class CanvasEngine {
     this.offCtx.restore();
   }
 
-  /**
-   * Deterministically redraws active operations ordered by server sequence
-   */
+  // Redraw all committed drawings on the main offscreen layer
   redrawAll() {
     this.clearOffscreenCtx();
 
@@ -616,9 +593,7 @@ class CanvasEngine {
     this.offCtx.restore();
   }
 
-  /**
-   * Renders local active stroke & remote streaming strokes on the preview layer
-   */
+  // Draw active strokes on preview layer
   renderPreview() {
     this.clearPreviewCtx();
 
@@ -626,7 +601,6 @@ class CanvasEngine {
     this.prevCtx.translate(this.panX, this.panY);
     this.prevCtx.scale(this.zoomLevel, this.zoomLevel);
 
-    // 1. Draw local in-progress stroke/shape
     if (this.isDrawing) {
       if (this.currentTool === 'brush' || this.currentTool === 'eraser') {
         this.drawSmoothPath(this.prevCtx, this.currentPoints, this.currentColor, this.strokeWidth, this.currentTool === 'eraser');
@@ -635,7 +609,6 @@ class CanvasEngine {
         this.drawShape(this.prevCtx, this.currentTool, this.startPoint, currentPt, this.currentColor, this.strokeWidth);
       }
     } else if (this.pendingLocalStroke) {
-      // Zero-flicker bridge: keep rendering local stroke until server op:committed arrives
       const stroke = this.pendingLocalStroke;
       if (stroke.tool === 'brush' || stroke.tool === 'eraser') {
         this.drawSmoothPath(this.prevCtx, stroke.points, stroke.color, stroke.size, stroke.tool === 'eraser');
@@ -644,7 +617,6 @@ class CanvasEngine {
       }
     }
 
-    // 2. Draw remote in-progress streaming strokes
     for (const stream of this.remoteStreams.values()) {
       if (stream.tool === 'brush' || stream.tool === 'eraser') {
         this.drawSmoothPath(this.prevCtx, stream.points, stream.color, stream.size, stream.tool === 'eraser');
@@ -657,9 +629,7 @@ class CanvasEngine {
     this.prevCtx.restore();
   }
 
-  /**
-   * Render Remote User Cursors with smooth frame-by-frame Linear Interpolation (Lerp)
-   */
+  // Draw remote user cursors smoothly
   renderCursors() {
     this.curCtx.save();
     this.curCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -676,7 +646,7 @@ class CanvasEngine {
       if (typeof cursor.x !== 'number') cursor.x = cursor.targetX;
       if (typeof cursor.y !== 'number') cursor.y = cursor.targetY;
 
-      // Remote Cursor Linear Interpolation (Lerp): 0.35 smoothing factor
+      // Smooth cursor movement interpolation
       cursor.x += (cursor.targetX - cursor.x) * 0.35;
       cursor.y += (cursor.targetY - cursor.y) * 0.35;
 
@@ -724,10 +694,7 @@ class CanvasEngine {
     this.curCtx.restore();
   }
 
-  /* ==========================================================================
-     Animation Loop & Telemetry
-     ========================================================================== */
-
+  // Animation frame render loop & FPS calculation
   startRenderLoop() {
     const loop = (timestamp) => {
       this.frameCount++;
@@ -747,17 +714,14 @@ class CanvasEngine {
     requestAnimationFrame(loop);
   }
 
-  /* ==========================================================================
-     Export Canvas Image
-     ========================================================================== */
-
+  // Export current drawing to PNG image
   exportImage(roomName = 'default', filename = 'collaborative-drawing.png') {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = this.width * this.dpr;
     tempCanvas.height = this.height * this.dpr;
     const tempCtx = tempCanvas.getContext('2d');
 
-    // Fill clean white background
+    // Fill white background
     tempCtx.fillStyle = '#FFFFFF';
     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
     tempCtx.drawImage(this.offscreenCanvas, 0, 0);

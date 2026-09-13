@@ -1,30 +1,18 @@
-/**
- * Room Drawing State Manager
- * Maintains in-memory operation logs, active stroke streams, sequence numbers,
- * and global undo/redo states per room.
- */
+// Stores drawing state, stroke history, sequence order, and undo/redo per room
 
 class RoomDrawingState {
   constructor(roomId) {
     this.roomId = roomId;
-    // Monotonically increasing sequence counter per room
-    this.nextSequence = 1;
-    // Sequential vector operation log
-    this.operations = []; // Array of { id, sequence, userId, userName, userColor, tool, points, color, size, text, timestamp, undone }
-    // Global Undo stack tracking operation IDs
+    this.nextSequence = 1; // Order number for incoming drawing actions
+    this.operations = []; // List of all drawing actions in this room
     this.undoStack = [];
     this.redoStack = [];
-    // Currently active live stroke streams by streamId
-    this.activeStreams = new Map();
+    this.activeStreams = new Map(); // Live drawing strokes in progress
     this.createdAt = Date.now();
-    
-    // Limits for performance & memory safety
     this.MAX_OPERATIONS = 10000;
   }
 
-  /**
-   * Returns complete state snapshot for late-joining and reconnecting clients
-   */
+  // Get full room history for new users joining the room
   getSnapshot() {
     return {
       roomId: this.roomId,
@@ -34,9 +22,7 @@ class RoomDrawingState {
     };
   }
 
-  /**
-   * Start a live streaming stroke
-   */
+  // Start tracking a live stroke as user draws
   startStream(streamId, streamData) {
     const stream = {
       streamId,
@@ -53,13 +39,10 @@ class RoomDrawingState {
     return stream;
   }
 
-  /**
-   * Append points to an ongoing live stream
-   */
+  // Add incoming points to active live stroke
   appendStreamPoints(streamId, newPoints) {
     const stream = this.activeStreams.get(streamId);
     if (stream) {
-      // Input safety cap: max 5000 points per stroke
       if (stream.points.length < 5000) {
         stream.points.push(...newPoints.slice(0, 100));
       }
@@ -68,9 +51,7 @@ class RoomDrawingState {
     return null;
   }
 
-  /**
-   * Finalize a stroke stream into a permanent vector operation with server-assigned sequence number
-   */
+  // Complete a stroke and save it to history
   endStream(streamId, finalOp) {
     this.activeStreams.delete(streamId);
     if (finalOp) {
@@ -79,11 +60,8 @@ class RoomDrawingState {
     return null;
   }
 
-  /**
-   * Add a finalized vector operation to history with monotonic sequence number
-   */
+  // Save drawing action to history list
   addOperation(op) {
-    // Memory limit safety: prune oldest undone operations if threshold exceeded
     if (this.operations.length >= this.MAX_OPERATIONS) {
       this.operations.shift();
     }
@@ -107,23 +85,18 @@ class RoomDrawingState {
 
     this.operations.push(operation);
     this.undoStack.push(operation.id);
-    
-    // Clear redo stack on new operation (branching history rule)
     this.redoStack = [];
     return operation;
   }
 
-  /**
-   * Global Undo: Marks the most recent active (non-undone) operation as undone.
-   * Server-authoritative sequence ordering.
-   */
+  // Undo last active drawing action by user
   undo(userId = null, targetOpId = null) {
     let targetOp = null;
 
     if (targetOpId) {
       targetOp = this.operations.find(op => op.id === targetOpId && !op.undone);
     } else if (userId) {
-      // Undo user's own last active operation
+      // Find user's own last action
       for (let i = this.operations.length - 1; i >= 0; i--) {
         if (this.operations[i].userId === userId && !this.operations[i].undone) {
           targetOp = this.operations[i];
@@ -132,7 +105,7 @@ class RoomDrawingState {
       }
     }
 
-    // Fallback: Undo global last active operation in sequence
+    // Fallback to last action overall
     if (!targetOp) {
       for (let i = this.operations.length - 1; i >= 0; i--) {
         if (!this.operations[i].undone) {
@@ -151,9 +124,7 @@ class RoomDrawingState {
     return { success: false, reason: 'Nothing to undo' };
   }
 
-  /**
-   * Global Redo: Re-enables the last undone operation
-   */
+  // Redo last undone action
   redo(userId = null) {
     let targetOp = null;
 
@@ -161,7 +132,6 @@ class RoomDrawingState {
       const lastUndoneId = this.redoStack.pop();
       targetOp = this.operations.find(op => op.id === lastUndoneId);
     } else {
-      // Find last undone operation in sequence
       for (let i = this.operations.length - 1; i >= 0; i--) {
         if (this.operations[i].undone) {
           targetOp = this.operations[i];
@@ -179,9 +149,7 @@ class RoomDrawingState {
     return { success: false, reason: 'Nothing to redo' };
   }
 
-  /**
-   * Clear canvas content for the requesting user only (clears operations created by userId)
-   */
+  // Clear drawings created by this user
   clear(userId, userName) {
     const clearedOpIds = [];
     this.operations.forEach(op => {

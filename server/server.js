@@ -8,21 +8,19 @@ const drawingState = require('./drawing-state');
 const app = express();
 let PORT = parseInt(process.env.PORT, 10) || 3000;
 
-// Serve static frontend files
+// Serve static frontend files (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, '../client')));
 
-// Health & Status check endpoint
+// Health check endpoint for deployment status checks
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
 });
 
-// Create HTTP server
+// Create HTTP and WebSocket server
 const server = http.createServer(app);
-
-// Attach native WebSocket server
 const wss = new WebSocketServer({ server });
 
-// Input Validation Helpers
+// Input validation helpers
 function isValidString(str, maxLength = 100) {
   return typeof str === 'string' && str.trim().length > 0 && str.length <= maxLength;
 }
@@ -41,7 +39,7 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (messageRaw) => {
     try {
-      // Safety cap: max 1MB per message payload
+      // Ignore oversized payloads (max 1MB)
       if (messageRaw.length > 1024 * 1024) {
         ws.send(JSON.stringify({ type: 'error', message: 'Payload size limit exceeded' }));
         return;
@@ -53,6 +51,7 @@ wss.on('connection', (ws) => {
       const { type } = data;
 
       switch (type) {
+        // User joined a room
         case 'join': {
           const roomId = isValidString(data.roomId, 30) ? data.roomId.trim() : 'default';
           const userName = isValidString(data.userName, 25) ? data.userName.trim() : null;
@@ -61,7 +60,7 @@ wss.on('connection', (ws) => {
           const userData = roomManager.joinRoom(roomId, ws, userName);
           const state = drawingState.getRoomState(roomId);
 
-          // Send snapshot payload with sequence numbers to client
+          // Send current room drawings snapshot to the joining user
           ws.send(JSON.stringify({
             type: 'room:joined',
             user: userData,
@@ -69,7 +68,7 @@ wss.on('connection', (ws) => {
             onlineUsers: roomManager.getRoomUsers(roomId)
           }));
 
-          // Broadcast user join to existing clients in room
+          // Tell others in the room a new user joined
           roomManager.broadcastToRoom(roomId, {
             type: 'user:joined',
             user: userData,
@@ -78,6 +77,7 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        // Live cursor pointer move
         case 'cursor:move': {
           if (!isValidNumber(data.x) || !isValidNumber(data.y)) return;
           const userData = roomManager.getUserData(ws);
@@ -98,6 +98,7 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        // User started a new drawing stroke
         case 'stroke:start': {
           if (!isValidString(data.streamId, 60)) return;
           const userData = roomManager.getUserData(ws);
@@ -121,6 +122,7 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        // Live streaming points for stroke in progress
         case 'stroke:point': {
           if (!isValidString(data.streamId, 60) || !Array.isArray(data.points)) return;
           const state = drawingState.getRoomState(currentRoomId);
@@ -139,6 +141,7 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        // User completed stroke
         case 'stroke:end': {
           const userData = roomManager.getUserData(ws);
           if (userData && data.operation) {
@@ -146,7 +149,7 @@ wss.on('connection', (ws) => {
             const committedOp = state.endStream(data.streamId, {
               ...data.operation,
               tool: sanitizeTool(data.operation.tool),
-              size: Math.min(100, Math.max(1, parseInt(data.operation.size, 10) || 5)),
+              size: Math.min(100, Math.max(1, parseInt(data.size, 10) || 5)),
               userId: userData.userId,
               userName: userData.userName,
               userColor: userData.userColor
@@ -162,6 +165,7 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        // Undo action
         case 'op:undo': {
           const userData = roomManager.getUserData(ws);
           if (userData) {
@@ -181,6 +185,7 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        // Redo action
         case 'op:redo': {
           const userData = roomManager.getUserData(ws);
           if (userData) {
@@ -200,6 +205,7 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        // Clear user drawings
         case 'room:clear': {
           const userData = roomManager.getUserData(ws);
           if (userData) {
@@ -217,6 +223,7 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        // Ping for latency measurement
         case 'ping': {
           ws.send(JSON.stringify({
             type: 'pong',
@@ -227,13 +234,14 @@ wss.on('connection', (ws) => {
         }
 
         default:
-          console.warn('Unhandled message type:', type);
+          console.warn('Unknown message type:', type);
       }
     } catch (err) {
       console.error('Server error processing WebSocket message:', err);
     }
   });
 
+  // Handle client disconnection
   ws.on('close', () => {
     const userData = roomManager.leaveRoom(ws);
     if (userData && currentRoomId) {
@@ -247,15 +255,16 @@ wss.on('connection', (ws) => {
   });
 });
 
+// Start server on free port
 function startServer(portToTry) {
   server.listen(portToTry, () => {
-    console.log(`🚀 Collaborative Canvas Server running at http://localhost:${portToTry}`);
+    console.log(`Server running at http://localhost:${portToTry}`);
   });
 }
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.warn(`⚠️ Port ${PORT} is in use. Trying port ${PORT + 1}...`);
+    console.warn(`Port ${PORT} is in use. Trying port ${PORT + 1}...`);
     PORT++;
     startServer(PORT);
   } else {

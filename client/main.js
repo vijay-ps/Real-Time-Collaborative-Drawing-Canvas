@@ -1,8 +1,4 @@
-/**
- * Main Application Coordinator
- * Connects Canvas Engine, WebSocket Client, DOM Toolbar UI, User List,
- * Modal Room Switcher, Keyboard Shortcuts, and Toast System.
- */
+// Connects canvas drawing engine, websocket events, toolbar buttons, room switcher, and keyboard shortcuts
 
 document.addEventListener('DOMContentLoaded', () => {
   const engine = window.canvasEngine;
@@ -35,30 +31,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const usersAvatarsList = document.getElementById('users-avatars-list');
   const pingValDisplay = document.getElementById('ping-val');
 
-  /* ==========================================================================
-     URL & Room Initialization
-     ========================================================================== */
-
+  // Read room name from URL query param ?room=name
   function getRoomFromUrl() {
     const params = new URLSearchParams(window.location.search);
     return params.get('room');
   }
 
+  // Update room name in URL without page refresh
   function setRoomInUrl(roomId) {
     const url = new URL(window.location);
     url.searchParams.set('room', roomId);
     window.history.pushState({}, '', url);
   }
 
-  // Connect WebSocket to room
+  // Connect WebSocket to initial room
   roomDisplay.textContent = currentRoomId;
   ws.connect(currentRoomId);
 
-  /* ==========================================================================
-     WebSocket Event Handlers
-     ========================================================================== */
-
-  // Connection Drop & Recovery Toast Notifications
+  // Connection status toast messages
   let wasDisconnected = false;
 
   ws.on('disconnect', () => {
@@ -73,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Handle incoming room join snapshot
   ws.on('room:joined', (data) => {
     localUser = data.user;
     engine.operations = data.snapshot.operations || [];
@@ -118,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Zero-flicker bridge: clear local pending stroke right as offscreen layer receives operation
+    // Clear local preview stroke when committed stroke arrives from server
     if (engine.pendingLocalStroke) {
       engine.pendingLocalStroke = null;
     }
@@ -149,26 +140,30 @@ document.addEventListener('DOMContentLoaded', () => {
   ws.on('latency', (data) => {
     if (pingValDisplay) {
       pingValDisplay.textContent = `${data.latency} ms`;
-      pingValDisplay.style.color = data.latency < 80 ? '#059669' : data.latency < 180 ? '#D97706' : '#DC2626';
+      pingValDisplay.style.color =
+        data.latency < 80
+          ? '#059669'
+          : data.latency < 180
+            ? '#D97706'
+            : '#DC2626';
     }
   });
 
-  /* ==========================================================================
-     Online Users UI Renderer
-     ========================================================================== */
-
+  // Render online users avatars in header
   function updateOnlineUsersList(users) {
     if (!usersAvatarsList) return;
 
     usersCountBadge.textContent = `👥 ${users.length} Online`;
     usersAvatarsList.innerHTML = '';
 
-    users.forEach(u => {
+    users.forEach((u) => {
       const avatar = document.createElement('div');
       avatar.className = 'user-avatar';
       avatar.style.backgroundColor = u.userColor;
       avatar.title = `${u.userName}${u.userId === localUser?.userId ? ' (You)' : ''}`;
-      avatar.textContent = u.userName ? u.userName.charAt(0).toUpperCase() : 'U';
+      avatar.textContent = u.userName
+        ? u.userName.charAt(0).toUpperCase()
+        : 'U';
 
       if (u.userId === localUser?.userId) {
         avatar.style.boxShadow = `0 0 0 2px #FFF`;
@@ -178,14 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ==========================================================================
-     Toolbar & UI Control Binding
-     ========================================================================== */
-
   // Tool Selection Buttons
-  document.querySelectorAll('.tool-btn').forEach(btn => {
+  document.querySelectorAll('.tool-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      document
+        .querySelectorAll('.tool-btn')
+        .forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       const tool = btn.dataset.tool;
       engine.setTool(tool);
@@ -193,19 +186,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Fixed Top-Right Pan & Zoom Widget Controls
-  const fixedPanBtn = document.getElementById('fixed-pan-btn');
+  // Fixed Top-Right Zoom Widget Controls
   const btnZoomIn = document.getElementById('btn-zoom-in');
   const btnZoomOut = document.getElementById('btn-zoom-out');
   const btnZoomReset = document.getElementById('btn-zoom-reset');
   const btnResetView = document.getElementById('btn-reset-view');
-
-  if (fixedPanBtn) {
-    fixedPanBtn.addEventListener('click', () => {
-      const selectToolBtn = document.querySelector('.tool-btn[data-tool="select"]');
-      if (selectToolBtn) selectToolBtn.click();
-    });
-  }
 
   if (btnZoomIn) {
     btnZoomIn.addEventListener('click', () => {
@@ -234,9 +219,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Color Swatches
-  document.querySelectorAll('.swatch').forEach(swatch => {
+  document.querySelectorAll('.swatch').forEach((swatch) => {
     swatch.addEventListener('click', () => {
-      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+      document
+        .querySelectorAll('.swatch')
+        .forEach((s) => s.classList.remove('active'));
       swatch.classList.add('active');
       const color = swatch.dataset.color;
       engine.currentColor = color;
@@ -248,11 +235,13 @@ document.addEventListener('DOMContentLoaded', () => {
   nativeColorPicker.addEventListener('input', (e) => {
     const color = e.target.value;
     engine.currentColor = color;
-    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    document
+      .querySelectorAll('.swatch')
+      .forEach((s) => s.classList.remove('active'));
     updateStrokePreview();
   });
 
-  // Stroke Slider
+  // Stroke Width Slider
   strokeSlider.addEventListener('input', (e) => {
     const val = parseInt(e.target.value, 10);
     engine.strokeWidth = val;
@@ -270,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   updateStrokePreview();
 
-  // Action Buttons
+  // Undo, Redo, Clear, Save buttons
   btnUndo.addEventListener('click', () => {
     if (ws.isConnected) {
       ws.send({ type: 'op:undo' });
@@ -284,7 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnClear.addEventListener('click', () => {
-    if (confirm('Are you sure you want to clear your drawings from this canvas?')) {
+    if (
+      confirm('Are you sure you want to clear your drawings from this canvas?')
+    ) {
       if (ws.isConnected) {
         ws.send({ type: 'room:clear' });
       }
@@ -292,14 +283,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnSave.addEventListener('click', () => {
-    engine.exportImage(currentRoomId, `collaborative-canvas-${currentRoomId}.png`);
+    engine.exportImage(
+      currentRoomId,
+      `collaborative-canvas-${currentRoomId}.png`
+    );
     showToast('Exported canvas to PNG! 💾', 'success');
   });
 
-  /* ==========================================================================
-     Room Modal Logic
-     ========================================================================== */
-
+  // Join Room Modal logic
   roomInfoBtn.addEventListener('click', () => {
     inputRoomId.value = currentRoomId;
     if (localUser) inputUserName.value = localUser.userName;
@@ -310,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     roomModal.classList.remove('active');
   });
 
-  document.querySelectorAll('.btn-chip').forEach(chip => {
+  document.querySelectorAll('.btn-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
       inputRoomId.value = chip.dataset.room;
     });
@@ -320,7 +311,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const newRoom = inputRoomId.value.trim() || 'default';
     const newName = inputUserName.value.trim();
 
-    if (newRoom !== currentRoomId || (localUser && newName !== localUser.userName)) {
+    if (
+      newRoom !== currentRoomId ||
+      (localUser && newName !== localUser.userName)
+    ) {
       currentRoomId = newRoom;
       setRoomInUrl(currentRoomId);
       roomDisplay.textContent = currentRoomId;
@@ -329,10 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
     roomModal.classList.remove('active');
   });
 
-  /* ==========================================================================
-     Keyboard Shortcuts
-     ========================================================================== */
-
+  // Keyboard Shortcuts (Ctrl+Z, Ctrl+Y, V, B, E, L, R, C, T)
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
@@ -352,17 +343,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const key = e.key.toLowerCase();
-    const tools = { v: 'select', h: 'select', b: 'brush', e: 'eraser', l: 'line', r: 'rectangle', c: 'circle', t: 'text' };
+    const tools = {
+      v: 'select',
+      h: 'select',
+      b: 'brush',
+      e: 'eraser',
+      l: 'line',
+      r: 'rectangle',
+      c: 'circle',
+      t: 'text',
+    };
     if (tools[key]) {
-      const btn = document.querySelector(`.tool-btn[data-tool="${tools[key]}"]`);
+      const btn = document.querySelector(
+        `.tool-btn[data-tool="${tools[key]}"]`
+      );
       if (btn) btn.click();
     }
   });
 
-  /* ==========================================================================
-     Notification Toast System
-     ========================================================================== */
-
+  // Notification Toast Helper
   function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;

@@ -1,7 +1,4 @@
-/**
- * Real-Time WebSocket Client Connection Manager
- * Manages WebSocket connection lifecycle, heartbeats (ping/pong latency), auto-reconnect, and event routing.
- */
+// Handles websocket connection to the server, auto-reconnecting, and sending/receiving messages
 
 class CanvasWebSocket {
   constructor() {
@@ -24,15 +21,15 @@ class CanvasWebSocket {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}`;
 
-    console.log(`[WS] Connecting to ${wsUrl}...`);
+    console.log(`Connecting websocket to ${wsUrl}`);
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
-      console.log('[WS] Connected successfully.');
+      console.log('Connected to server');
       this.isConnected = true;
       this.reconnectAttempts = 0;
 
-      // Join requested room
+      // Tell server which room we are joining
       this.send({
         type: 'join',
         roomId: this.currentRoomId,
@@ -47,6 +44,7 @@ class CanvasWebSocket {
       try {
         const message = JSON.parse(event.data);
 
+        // Handle latency check response
         if (message.type === 'pong') {
           this.latency = Date.now() - message.clientTime;
           this.trigger('latency', { latency: this.latency });
@@ -55,30 +53,31 @@ class CanvasWebSocket {
 
         this.trigger(message.type, message);
       } catch (err) {
-        console.error('[WS] Failed to parse message:', err);
+        console.error('Failed to read incoming message:', err);
       }
     };
 
     this.ws.onclose = () => {
-      console.warn('[WS] Connection closed.');
+      console.warn('Connection closed');
       this.isConnected = false;
       this.stopHeartbeat();
       this.trigger('disconnect');
 
-      // Auto-reconnect with exponential backoff
+      // Try reconnecting after a short delay if connection breaks
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++;
         const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
-        console.log(`[WS] Reconnecting in ${delay}ms (Attempt ${this.reconnectAttempts})...`);
+        console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
         setTimeout(() => this.connect(this.currentRoomId, this.userName), delay);
       }
     };
 
     this.ws.onerror = (err) => {
-      console.error('[WS] WebSocket error:', err);
+      console.error('Websocket error:', err);
     };
   }
 
+  // Measure ping latency to server every 3 seconds
   startHeartbeat() {
     this.stopHeartbeat();
     this.pingInterval = setInterval(() => {
@@ -96,6 +95,7 @@ class CanvasWebSocket {
     }
   }
 
+  // Send message object to server as JSON
   send(data) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));

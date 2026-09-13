@@ -1,21 +1,18 @@
-/**
- * Room & Client Session Manager
- * Manages WebSocket connections, user identities, vibrant colors, and room broadcasts.
- */
+// Manages user rooms, user names/colors, and sending messages to clients in a room
 
 const USER_COLORS = [
-  '#FF5722', // Vivid Orange
-  '#E91E63', // Neon Pink
-  '#9C27B0', // Deep Purple
-  '#3F51B5', // Indigo
-  '#00BCD4', // Electric Cyan
-  '#009688', // Emerald Green
-  '#8BC34A', // Lime Green
-  '#FFEB3B', // Cyber Yellow
-  '#FF9800', // Amber
-  '#795548', // Warm Brown
-  '#607D8B', // Blue Grey
-  '#FF4081'  // Bright Accent Pink
+  '#FF5722',
+  '#E91E63',
+  '#9C27B0',
+  '#3F51B5',
+  '#00BCD4',
+  '#009688',
+  '#8BC34A',
+  '#FFEB3B',
+  '#FF9800',
+  '#795548',
+  '#607D8B',
+  '#FF4081'
 ];
 
 const ADJECTIVES = ['Creative', 'Swift', 'Bright', 'Cosmic', 'Vibrant', 'Agile', 'Dynamic', 'Clever', 'Bold', 'Epic'];
@@ -23,13 +20,12 @@ const ANIMALS = ['Fox', 'Falcon', 'Panther', 'Otter', 'Lynx', 'Phoenix', 'Dolphi
 
 class RoomManager {
   constructor() {
-    // Room ID -> Map(ws -> userData)
-    this.rooms = new Map();
-    // WS -> { userId, userName, userColor, roomId, cursor: {x,y} }
-    this.clients = new Map();
+    this.rooms = new Map(); // Room ID -> Map of connected clients
+    this.clients = new Map(); // Client connection -> user data
     this.colorIndex = 0;
   }
 
+  // Create a random friendly user name and color for new users
   generateUserIdentity() {
     const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
@@ -40,6 +36,7 @@ class RoomManager {
     return { userId, userName, userColor };
   }
 
+  // Add client connection to a room
   joinRoom(roomId, ws, customName = null) {
     if (!this.rooms.has(roomId)) {
       this.rooms.set(roomId, new Map());
@@ -67,6 +64,7 @@ class RoomManager {
     return userData;
   }
 
+  // Remove client connection when disconnected
   leaveRoom(ws) {
     const userData = this.clients.get(ws);
     if (!userData) return null;
@@ -103,6 +101,7 @@ class RoomManager {
     return users;
   }
 
+  // Send message to everyone in the room except the sender
   broadcastToRoom(roomId, data, senderWs = null) {
     if (!this.rooms.has(roomId)) return;
 
@@ -110,12 +109,13 @@ class RoomManager {
     const roomClients = this.rooms.get(roomId);
 
     for (const [ws, userData] of roomClients.entries()) {
-      if (ws !== senderWs && ws.readyState === 1 /* WebSocket.OPEN */) {
+      if (ws !== senderWs && ws.readyState === 1) {
         ws.send(payload);
       }
     }
   }
 
+  // Send message to everyone in the room including sender
   broadcastToAllInRoom(roomId, data) {
     this.broadcastToRoom(roomId, data, null);
   }
